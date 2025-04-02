@@ -6,12 +6,12 @@ import { Button } from "@/components/ui/button";
 import { 
   Sparkles, 
   PenTool, 
-  MagicWand, 
-  Characters, 
+  Wand2, 
+  Users, 
   MessageSquareText, 
   Languages, 
   Download, 
-  Wand2, 
+  Sparkle,
   UserPlus,
   Palette,
   Heart,
@@ -49,13 +49,13 @@ const Features = () => {
       gradient: "from-pixar-purple to-pixar-blue"
     },
     {
-      icon: Characters,
+      icon: Users,
       title: "Character Library",
       description: "Choose from hundreds of Pixar-style characters or customize your own with our intuitive tools.",
       gradient: "from-pixar-blue to-pixar-teal"
     },
     {
-      icon: MagicWand,
+      icon: Wand2,
       title: "One-Click Animation",
       description: "Transform your story into a fully animated short with a single click, powered by our AI.",
       gradient: "from-pixar-teal to-pixar-green"
@@ -79,7 +79,7 @@ const Features = () => {
       gradient: "from-pixar-orange to-pixar-red"
     },
     {
-      icon: Wand2,
+      icon: Sparkle,
       title: "Style Consistency",
       description: "Maintain consistent character appearance and animation style across all scenes.",
       gradient: "from-pixar-red to-pixar-purple"
