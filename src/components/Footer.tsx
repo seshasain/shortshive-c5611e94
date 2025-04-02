@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -83,7 +82,6 @@ const Footer = () => {
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 * index }}
                   className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-pixar-blue hover:text-white transition-colors"
                 >
                   <span className="sr-only">{social}</span>

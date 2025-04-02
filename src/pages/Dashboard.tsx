@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ProjectCard from '@/components/dashboard/ProjectCard';
-import { ArrowRight, MagicWand, Pencil, Film, Plus, Video } from 'lucide-react';
+import { ArrowRight, Wand2, Pencil, Film, Plus, Video } from 'lucide-react';
 
 type Project = {
   id: string;
@@ -106,7 +105,7 @@ const Dashboard = () => {
                   <p className="text-muted-foreground mb-4">Start from scratch or use AI assistance</p>
                   <div className="flex justify-center gap-3">
                     <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                      <MagicWand className="h-4 w-4" />
+                      <Wand2 className="h-4 w-4" />
                       AI Generate
                     </Button>
                     <Button variant="ghost" size="sm" className="flex items-center gap-1">
@@ -147,7 +146,7 @@ const Dashboard = () => {
               </CardHeader>
               <CardContent className="grid grid-cols-2 gap-4">
                 <Button variant="outline" className="h-auto flex flex-col items-center justify-start p-4 gap-2 hover:bg-pixar-blue/5">
-                  <MagicWand className="h-10 w-10 text-pixar-blue mb-2" />
+                  <Wand2 className="h-10 w-10 text-pixar-blue mb-2" />
                   <span className="text-sm font-medium">AI Story Generator</span>
                 </Button>
                 <Button variant="outline" className="h-auto flex flex-col items-center justify-start p-4 gap-2 hover:bg-pixar-purple/5">
