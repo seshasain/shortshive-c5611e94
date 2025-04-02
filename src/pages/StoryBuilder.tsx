@@ -1,20 +1,17 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { Sparkles, VideoIcon, Clock, Languages, Music, Mic, Heart, ArrowRight, ImageIcon, Volume2 } from 'lucide-react';
+import { VideoIcon, Clock, Languages, Music, Mic, Heart, ArrowRight, LayoutTemplate, Volume2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import EmotionSelector from '@/components/dashboard/EmotionSelector';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 const emotions = [
   { name: 'Happiness', icon: '😊' },
@@ -36,16 +33,6 @@ const StoryBuilder = () => {
   const [language, setLanguage] = useState('English');
   const [voiceStyle, setVoiceStyle] = useState('Friendly');
   const [duration, setDuration] = useState('60');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [hook, setHook] = useState('');
-  
-  const handleGenerateStory = () => {
-    setIsGenerating(true);
-    setTimeout(() => {
-      setIsGenerating(false);
-      setStoryInput("Once upon a time in a colorful underwater world, there lived a curious little fish named Finn. Unlike other fish who were content to swim in the same coral reef, Finn dreamed of exploring the vast ocean beyond. One day, a strong current swept Finn far from home into an unfamiliar part of the ocean...");
-    }, 1500);
-  };
   
   const handleContinue = () => {
     navigate('/review-story');
@@ -66,10 +53,9 @@ const StoryBuilder = () => {
           </div>
         </motion.div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 gap-8">
           {/* Story Input Section */}
           <motion.div 
-            className="lg:col-span-2"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
@@ -82,95 +68,24 @@ const StoryBuilder = () => {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <Tabs defaultValue="ai-generate" className="mb-6">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="ai-generate" className="flex items-center justify-center">
-                      <Sparkles className="mr-2 h-4 w-4 text-pixar-yellow" />
-                      AI Generate
-                    </TabsTrigger>
-                    <TabsTrigger value="manual" className="flex items-center justify-center">
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="manual-story" className="flex items-center">
                       <Heart className="mr-2 h-4 w-4 text-pixar-red" />
-                      Write Your Own
-                    </TabsTrigger>
-                  </TabsList>
-                  <TabsContent value="ai-generate" className="pt-4">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="story-prompt">Story Prompt</Label>
-                        <div className="mt-1.5">
-                          <Input 
-                            id="story-prompt" 
-                            placeholder="E.g., A curious fish explores the ocean beyond his coral reef..." 
-                            value={hook}
-                            onChange={(e) => setHook(e.target.value)}
-                          />
-                        </div>
-                      </div>
-                      <div className="flex justify-end">
-                        <Button 
-                          onClick={handleGenerateStory} 
-                          disabled={isGenerating || !hook}
-                          className="bg-pixar-blue text-white hover:bg-pixar-darkblue"
-                        >
-                          {isGenerating ? (
-                            <>Generating<span className="loading-dots">...</span></>
-                          ) : (
-                            <>
-                              <Sparkles className="mr-2 h-4 w-4" />
-                              Generate Story
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                      {storyInput && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          transition={{ duration: 0.5 }}
-                          className="mt-4"
-                        >
-                          <Label htmlFor="generated-story">Generated Story</Label>
-                          <div className="relative mt-1.5">
-                            <Textarea 
-                              id="generated-story" 
-                              className="min-h-[200px]"
-                              value={storyInput}
-                              onChange={(e) => setStoryInput(e.target.value)}
-                            />
-                            <div className="absolute bottom-3 right-3 flex space-x-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                className="h-8"
-                                onClick={() => handleGenerateStory()}
-                              >
-                                <Sparkles className="h-3 w-3 mr-1" />
-                                Regenerate
-                              </Button>
-                            </div>
-                          </div>
-                        </motion.div>
-                      )}
-                    </div>
-                  </TabsContent>
-                  <TabsContent value="manual" className="pt-4">
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="manual-story">Your Story</Label>
-                        <Textarea 
-                          id="manual-story" 
-                          placeholder="Once upon a time..." 
-                          className="min-h-[250px] mt-1.5"
-                          value={storyInput}
-                          onChange={(e) => setStoryInput(e.target.value)}
-                        />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        Write your story in as much detail as possible for the best animation results.
-                      </p>
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                      Your Story
+                    </Label>
+                    <Textarea 
+                      id="manual-story" 
+                      placeholder="Once upon a time..." 
+                      className="min-h-[250px] mt-1.5"
+                      value={storyInput}
+                      onChange={(e) => setStoryInput(e.target.value)}
+                    />
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Write your story in as much detail as possible for the best animation results.
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </motion.div>
@@ -199,20 +114,20 @@ const StoryBuilder = () => {
                 {/* Aspect Ratio */}
                 <div>
                   <Label className="block mb-2">Aspect Ratio</Label>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-3 max-w-xs">
                     <div 
                       className={`relative cursor-pointer rounded-lg border-2 ${
                         aspectRatio === '16:9' ? 'border-pixar-blue' : 'border-gray-200'
                       }`}
                       onClick={() => setAspectRatio('16:9')}
                     >
-                      <AspectRatio ratio={16/9} className="bg-muted">
+                      <AspectRatio ratio={16/9} className="bg-muted h-16">
                         <div className="flex items-center justify-center h-full">
-                          <ImageIcon className="text-muted-foreground h-8 w-8" />
+                          <div className="w-8 h-5 border-2 border-gray-400 rounded-sm"></div>
                         </div>
                       </AspectRatio>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className={`px-2 py-1 rounded-md ${
+                        <div className={`px-2 py-0.5 text-xs rounded-md ${
                           aspectRatio === '16:9' ? 'bg-pixar-blue text-white' : 'bg-white/70'
                         }`}>
                           16:9
@@ -225,13 +140,13 @@ const StoryBuilder = () => {
                       }`}
                       onClick={() => setAspectRatio('9:16')}
                     >
-                      <AspectRatio ratio={9/16} className="bg-muted">
+                      <AspectRatio ratio={9/16} className="bg-muted h-16">
                         <div className="flex items-center justify-center h-full">
-                          <ImageIcon className="text-muted-foreground h-8 w-8" />
+                          <div className="w-5 h-8 border-2 border-gray-400 rounded-sm"></div>
                         </div>
                       </AspectRatio>
                       <div className="absolute inset-0 flex items-center justify-center">
-                        <div className={`px-2 py-1 rounded-md ${
+                        <div className={`px-2 py-0.5 text-xs rounded-md ${
                           aspectRatio === '9:16' ? 'bg-pixar-blue text-white' : 'bg-white/70'
                         }`}>
                           9:16

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -5,7 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Button } from "@/components/ui/button";
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import ProjectCard from '@/components/dashboard/ProjectCard';
-import { ArrowRight, Wand2, Pencil, Film, Plus, Video } from 'lucide-react';
+import { ArrowRight, Wand2, Video, Film, Plus, Users, FileText, Clock } from 'lucide-react';
 
 type Project = {
   id: string;
@@ -50,6 +51,14 @@ const Dashboard = () => {
     }
   };
 
+  // Dashboard statistics
+  const statistics = [
+    { label: 'Total Animations', value: '12', icon: Video, color: 'bg-pixar-blue/10 text-pixar-blue' },
+    { label: 'Characters Created', value: '28', icon: Users, color: 'bg-pixar-purple/10 text-pixar-purple' },
+    { label: 'Stories Written', value: '15', icon: FileText, color: 'bg-pixar-green/10 text-pixar-green' },
+    { label: 'Rendering Minutes', value: '145', icon: Clock, color: 'bg-pixar-orange/10 text-pixar-orange' }
+  ];
+
   return (
     <DashboardLayout>
       <div className="container-custom py-10">
@@ -61,7 +70,7 @@ const Dashboard = () => {
               transition={{ duration: 0.5 }}
               className="text-3xl md:text-4xl font-bold mb-2 pixar-text-gradient"
             >
-              Your Animation Projects
+              Welcome Back!
             </motion.h1>
             <motion.p
               initial={{ opacity: 0, y: -10 }}
@@ -69,7 +78,7 @@ const Dashboard = () => {
               transition={{ duration: 0.5, delay: 0.1 }}
               className="text-muted-foreground"
             >
-              Create, edit and manage your Pixar-quality animations
+              Continue working on your animations or create something new
             </motion.p>
           </div>
           <motion.div
@@ -87,53 +96,77 @@ const Dashboard = () => {
           </motion.div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
-          {/* New Project Card */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            whileHover={{ y: -5, transition: { duration: 0.2 } }}
-          >
-            <Link to="/build-story" className="block h-full">
-              <Card className="border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 h-full transition-all duration-300 flex flex-col justify-center items-center py-10">
-                <div className="text-center">
-                  <div className="mx-auto rounded-full bg-pixar-blue/10 p-4 mb-4">
-                    <Plus className="h-8 w-8 text-pixar-blue" />
+        {/* Statistics Cards */}
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8"
+        >
+          {statistics.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card key={index} className="border border-gray-100">
+                <CardContent className="p-4 flex items-center gap-4">
+                  <div className={`w-12 h-12 rounded-lg ${stat.color} flex items-center justify-center`}>
+                    <Icon className="h-6 w-6" />
                   </div>
-                  <h3 className="text-xl font-medium mb-2">Create New Animation</h3>
-                  <p className="text-muted-foreground mb-4">Start from scratch or use AI assistance</p>
-                  <div className="flex justify-center gap-3">
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                      <Wand2 className="h-4 w-4" />
-                      AI Generate
-                    </Button>
-                    <Button variant="ghost" size="sm" className="flex items-center gap-1">
-                      <Pencil className="h-4 w-4" />
-                      Manual
-                    </Button>
+                  <div>
+                    <p className="text-sm text-gray-500">{stat.label}</p>
+                    <p className="text-2xl font-bold">{stat.value}</p>
                   </div>
-                </div>
+                </CardContent>
               </Card>
+            );
+          })}
+        </motion.div>
+        
+        <div className="mb-10">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl md:text-2xl font-bold pixar-text-gradient">Recent Projects</h2>
+            <Link to="/my-animations" className="text-pixar-blue hover:text-pixar-darkblue flex items-center text-sm font-medium">
+              View All <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
-          </motion.div>
+          </div>
           
-          {/* Project Cards */}
-          <motion.div
-            variants={container}
-            initial="hidden"
-            animate="show"
-            className="col-span-1 md:col-span-2"
-          >
-            {projects.map((project, index) => (
-              <ProjectCard key={project.id} project={project} delay={index * 0.1} />
-            ))}
-          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* New Project Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              whileHover={{ y: -5, transition: { duration: 0.2 } }}
+            >
+              <Link to="/build-story" className="block h-full">
+                <Card className="border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 h-full transition-all duration-300 flex flex-col justify-center items-center py-10">
+                  <div className="text-center">
+                    <div className="mx-auto rounded-full bg-pixar-blue/10 p-4 mb-4">
+                      <Plus className="h-8 w-8 text-pixar-blue" />
+                    </div>
+                    <h3 className="text-xl font-medium mb-2">Start New Project</h3>
+                    <p className="text-muted-foreground mb-4">Create a stunning Pixar-style animation</p>
+                  </div>
+                </Card>
+              </Link>
+            </motion.div>
+            
+            {/* Project Cards - only show 2 most recent */}
+            <motion.div
+              variants={container}
+              initial="hidden"
+              animate="show"
+              className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              {projects.slice(0, 2).map((project, index) => (
+                <ProjectCard key={project.id} project={project} delay={index * 0.1} />
+              ))}
+            </motion.div>
+          </div>
         </div>
         
         {/* Additional sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          {/* Quick Actions Card */}
+          {/* Popular Templates */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -141,31 +174,37 @@ const Dashboard = () => {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Quick Actions</CardTitle>
-                <CardDescription>Access common tools and features</CardDescription>
+                <CardTitle>Popular Templates</CardTitle>
+                <CardDescription>Start with a pre-made template to save time</CardDescription>
               </CardHeader>
-              <CardContent className="grid grid-cols-2 gap-4">
-                <Button variant="outline" className="h-auto flex flex-col items-center justify-start p-4 gap-2 hover:bg-pixar-blue/5">
-                  <Wand2 className="h-10 w-10 text-pixar-blue mb-2" />
-                  <span className="text-sm font-medium">AI Story Generator</span>
-                </Button>
-                <Button variant="outline" className="h-auto flex flex-col items-center justify-start p-4 gap-2 hover:bg-pixar-purple/5">
-                  <Pencil className="h-10 w-10 text-pixar-purple mb-2" />
-                  <span className="text-sm font-medium">Script Editor</span>
-                </Button>
-                <Button variant="outline" className="h-auto flex flex-col items-center justify-start p-4 gap-2 hover:bg-pixar-orange/5">
-                  <Film className="h-10 w-10 text-pixar-orange mb-2" />
-                  <span className="text-sm font-medium">Scene Gallery</span>
-                </Button>
-                <Button variant="outline" className="h-auto flex flex-col items-center justify-start p-4 gap-2 hover:bg-pixar-green/5">
-                  <Video className="h-10 w-10 text-pixar-green mb-2" />
-                  <span className="text-sm font-medium">My Animations</span>
-                </Button>
+              <CardContent className="space-y-4">
+                {[
+                  { name: 'Character Introduction', category: 'Storytelling', image: 'https://source.unsplash.com/random/100x60?animation=5' },
+                  { name: 'Adventure Quest', category: 'Action', image: 'https://source.unsplash.com/random/100x60?animation=6' },
+                  { name: 'Educational Story', category: 'Learning', image: 'https://source.unsplash.com/random/100x60?animation=7' }
+                ].map((template, index) => (
+                  <div key={index} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <img src={template.image} alt={template.name} className="w-16 h-10 rounded object-cover" />
+                    <div className="flex-1">
+                      <p className="font-medium">{template.name}</p>
+                      <p className="text-xs text-gray-500">{template.category}</p>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-pixar-blue hover:text-pixar-darkblue">
+                      Use
+                    </Button>
+                  </div>
+                ))}
               </CardContent>
+              <CardFooter>
+                <Button variant="ghost" size="sm" className="ml-auto">
+                  View All Templates
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </CardFooter>
             </Card>
           </motion.div>
           
-          {/* Recent Activity */}
+          {/* Learning Resources */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -173,25 +212,29 @@ const Dashboard = () => {
           >
             <Card>
               <CardHeader>
-                <CardTitle>Recent Activity</CardTitle>
-                <CardDescription>What's been happening in your projects</CardDescription>
+                <CardTitle>Learning Resources</CardTitle>
+                <CardDescription>Tutorials to help you master animation techniques</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0">
-                    <div className="w-10 h-10 rounded-full bg-pixar-blue/10 flex items-center justify-center flex-shrink-0">
-                      <Film className="h-5 w-5 text-pixar-blue" />
+                {[
+                  { title: 'Creating Compelling Characters', duration: '10 min', type: 'Video Tutorial' },
+                  { title: 'Writing Better Storylines', duration: '15 min', type: 'Written Guide' },
+                  { title: 'Advanced Animation Settings', duration: '12 min', type: 'Interactive Tutorial' }
+                ].map((resource, index) => (
+                  <div key={index} className="flex items-center gap-4 p-2 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer">
+                    <div className="w-10 h-10 rounded-full bg-pixar-purple/10 flex items-center justify-center flex-shrink-0">
+                      <Film className="h-5 w-5 text-pixar-purple" />
                     </div>
-                    <div>
-                      <p className="font-medium">Animation {i} Generated</p>
-                      <p className="text-sm text-muted-foreground">2 hour{i > 1 ? 's' : ''} ago</p>
+                    <div className="flex-1">
+                      <p className="font-medium">{resource.title}</p>
+                      <p className="text-xs text-gray-500">{resource.type} · {resource.duration}</p>
                     </div>
                   </div>
                 ))}
               </CardContent>
               <CardFooter>
                 <Button variant="ghost" size="sm" className="ml-auto">
-                  View All Activity
+                  View Learning Center
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </CardFooter>
