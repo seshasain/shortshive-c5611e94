@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Hero from '../components/Hero';
 import Features from '../components/Features';
@@ -81,10 +82,12 @@ const Index = () => {
               whileHover={{ scale: 1.05 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
-              <Button className="bg-white text-pixar-blue hover:bg-gray-100 pixar-button text-lg group">
-                Get Started For Free
-                <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
+              <Link to="/dashboard">
+                <Button className="bg-white text-pixar-blue hover:bg-gray-100 pixar-button text-lg group">
+                  Get Started For Free
+                  <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </Link>
             </motion.div>
             <p className="mt-4 opacity-80">No credit card required</p>
           </motion.div>
