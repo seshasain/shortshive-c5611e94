@@ -3,6 +3,12 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 const Footer = () => {
+  // Function to handle navigation safely
+  const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
+    e.preventDefault();
+    window.location.href = path;
+  };
+
   return (
     <footer className="bg-gray-50 pt-16 pb-8">
       <div className="container-custom">
@@ -34,9 +40,13 @@ const Footer = () => {
             <ul className="space-y-3">
               {['Features', 'Pricing', 'Examples', 'Templates', 'Character Library'].map((item) => (
                 <li key={item}>
-                  <Link to={`/${item.toLowerCase()}`} className="text-gray-600 hover:text-pixar-blue transition-colors">
+                  <a 
+                    href={`/${item.toLowerCase()}`} 
+                    onClick={(e) => handleNavigation(e, `/${item.toLowerCase()}`)}
+                    className="text-gray-600 hover:text-pixar-blue transition-colors"
+                  >
                     {item}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -47,9 +57,13 @@ const Footer = () => {
             <ul className="space-y-3">
               {['Documentation', 'Tutorials', 'Blog', 'Community', 'API'].map((item) => (
                 <li key={item}>
-                  <Link to={`/${item.toLowerCase()}`} className="text-gray-600 hover:text-pixar-blue transition-colors">
+                  <a 
+                    href={`/${item.toLowerCase()}`} 
+                    onClick={(e) => handleNavigation(e, `/${item.toLowerCase()}`)}
+                    className="text-gray-600 hover:text-pixar-blue transition-colors"
+                  >
                     {item}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -60,9 +74,13 @@ const Footer = () => {
             <ul className="space-y-3">
               {['About', 'Careers', 'Contact', 'Legal', 'Press'].map((item) => (
                 <li key={item}>
-                  <Link to={`/${item.toLowerCase()}`} className="text-gray-600 hover:text-pixar-blue transition-colors">
+                  <a 
+                    href={`/${item.toLowerCase()}`}
+                    onClick={(e) => handleNavigation(e, `/${item.toLowerCase()}`)}
+                    className="text-gray-600 hover:text-pixar-blue transition-colors"
+                  >
                     {item}
-                  </Link>
+                  </a>
                 </li>
               ))}
             </ul>
@@ -74,15 +92,27 @@ const Footer = () => {
             &copy; {new Date().getFullYear()} PixarifyAI. All rights reserved.
           </p>
           <div className="flex space-x-6">
-            <Link to="/terms" className="text-gray-500 text-sm hover:text-pixar-blue transition-colors">
+            <a 
+              href="/terms" 
+              onClick={(e) => handleNavigation(e, "/terms")}
+              className="text-gray-500 text-sm hover:text-pixar-blue transition-colors"
+            >
               Terms of Service
-            </Link>
-            <Link to="/privacy" className="text-gray-500 text-sm hover:text-pixar-blue transition-colors">
+            </a>
+            <a 
+              href="/privacy" 
+              onClick={(e) => handleNavigation(e, "/privacy")}
+              className="text-gray-500 text-sm hover:text-pixar-blue transition-colors"
+            >
               Privacy Policy
-            </Link>
-            <Link to="/cookies" className="text-gray-500 text-sm hover:text-pixar-blue transition-colors">
+            </a>
+            <a 
+              href="/cookies" 
+              onClick={(e) => handleNavigation(e, "/cookies")}
+              className="text-gray-500 text-sm hover:text-pixar-blue transition-colors"
+            >
               Cookie Policy
-            </Link>
+            </a>
           </div>
         </div>
       </div>
