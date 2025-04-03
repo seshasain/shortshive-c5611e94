@@ -16,8 +16,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
-import { generateStoryFromPrompt, StoryData } from '@/services/animationService';
 
 const emotions = [
   { name: 'Happiness', color: '#FFD166' },
@@ -47,54 +45,31 @@ const StoryBuilder = () => {
   const [duration, setDuration] = useState('60');
   const [currentExample, setCurrentExample] = useState(0);
   const [addHook, setAddHook] = useState(true);
-  const [isLoading, setIsLoading] = useState(false);
   
-  const handleContinue = async () => {
-    if (!promptInput && !storyInput) {
-      toast.error("Please enter a story prompt or write a story manually");
-      return;
-    }
+  const handleContinue = () => {
+    // Prepare the data to be sent to the next view
+    const storyData = {
+      storyType: promptInput ? 'ai-prompt' : 'manual',
+      storyContent: promptInput || storyInput,
+      settings: {
+        emotion: selectedEmotion,
+        language,
+        voiceStyle,
+        duration: parseInt(duration),
+        addHook
+      },
+      timestamp: new Date().toISOString()
+    };
     
-    setIsLoading(true);
+    // Log the data as formatted JSON
+    console.log('Data being sent to Story Refinement:');
+    console.log(JSON.stringify(storyData, null, 2));
     
-    try {
-      const storyData: StoryData = {
-        storyType: promptInput ? 'ai-prompt' : 'manual',
-        storyContent: promptInput || storyInput,
-        settings: {
-          emotion: selectedEmotion,
-          language,
-          voiceStyle,
-          duration: parseInt(duration),
-          addHook
-        },
-        timestamp: new Date().toISOString()
-      };
-      
-      if (promptInput) {
-        try {
-          const generatedStory = await generateStoryFromPrompt(promptInput, storyData.settings);
-          storyData.storyContent = generatedStory;
-        } catch (error) {
-          console.error("Error generating story:", error);
-          toast.error("Failed to generate story. Please try again.");
-          setIsLoading(false);
-          return;
-        }
-      }
-      
-      console.log('Data being sent to Story Refinement:');
-      console.log(JSON.stringify(storyData, null, 2));
-      
-      navigate('/review-story', { state: { storyData } });
-    } catch (error) {
-      console.error("Error preparing story data:", error);
-      toast.error("Something went wrong. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
+    // Pass the data to the next view using React Router's state
+    navigate('/review-story', { state: { storyData } });
   };
   
+  // Cycle through prompt examples for the placeholder
   React.useEffect(() => {
     const interval = setInterval(() => {
       setCurrentExample((prev) => (prev + 1) % storyPromptExamples.length);
@@ -118,6 +93,7 @@ const StoryBuilder = () => {
         </motion.div>
         
         <div className="grid grid-cols-1 gap-8">
+          {/* Story Input Section */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -207,6 +183,7 @@ const StoryBuilder = () => {
             </Card>
           </motion.div>
           
+          {/* Settings Panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -217,6 +194,7 @@ const StoryBuilder = () => {
                 <CardTitle>Basic Settings</CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Emotion Selection */}
                 <div>
                   <Label className="block mb-2 flex items-center">
                     <Heart className="mr-2 h-4 w-4 text-pixar-blue" />
@@ -246,6 +224,7 @@ const StoryBuilder = () => {
                   </div>
                 </div>
                 
+                {/* Hook Option */}
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label className="text-base flex items-center">
@@ -263,6 +242,7 @@ const StoryBuilder = () => {
                   />
                 </div>
                 
+                {/* Language Selection */}
                 <div>
                   <Label htmlFor="language" className="flex items-center">
                     <Languages className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -283,6 +263,7 @@ const StoryBuilder = () => {
                   </Select>
                 </div>
                 
+                {/* Voice Style */}
                 <div>
                   <Label htmlFor="voice" className="flex items-center">
                     <Mic className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -302,6 +283,7 @@ const StoryBuilder = () => {
                   </Select>
                 </div>
                 
+                {/* Duration Slider */}
                 <div>
                   <Label className="flex items-center">
                     <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
@@ -327,6 +309,7 @@ const StoryBuilder = () => {
               </CardContent>
             </Card>
             
+            {/* Summary Card */}
             <Card className="mt-6 border-pixar-blue/30">
               <CardHeader className="pb-2">
                 <CardTitle className="text-lg flex items-center">
@@ -383,6 +366,7 @@ const StoryBuilder = () => {
               </CardContent>
             </Card>
             
+            {/* Continue Button */}
             <motion.div 
               className="mt-6"
               whileHover={{ scale: 1.03 }}
@@ -390,17 +374,11 @@ const StoryBuilder = () => {
             >
               <Button 
                 onClick={handleContinue} 
-                disabled={(!promptInput && !storyInput) || isLoading}
+                disabled={!promptInput && !storyInput} 
                 className="w-full bg-pixar-blue text-white hover:bg-pixar-darkblue pixar-button"
               >
-                {isLoading ? (
-                  <>Processing...</>
-                ) : (
-                  <>
-                    Continue to Story Refinement
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
+                Continue to Story Refinement
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               {!promptInput && !storyInput && (
                 <p className="text-center text-red-500 text-xs mt-2">
