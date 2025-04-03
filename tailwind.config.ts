@@ -63,7 +63,7 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				// Pixar-inspired color palette
+				// Pixar-inspired color palette (expanded)
 				pixar: {
 					blue: '#3498db',
 					orange: '#f39c12',
@@ -74,6 +74,15 @@ export default {
 					green: '#2ecc71',
 					darkblue: '#2980b9',
 					darkorange: '#d35400',
+					// New added vibrant colors
+					pink: '#FF73B3',
+					lavender: '#B67DFF',
+					mint: '#67E6A1',
+					coral: '#FF7E67',
+					sky: '#4CD4FF',
+					lime: '#BAFF29',
+					peach: '#FFC2A6',
+					berry: '#D46BFF'
 				}
 			},
 			borderRadius: {
@@ -101,6 +110,10 @@ export default {
 				'pulse-slow': {
 					'0%, 100%': { opacity: '1' },
 					'50%': { opacity: '0.7' }
+				},
+				'shimmer': {
+					'0%': { backgroundPosition: '-200% 0' },
+					'100%': { backgroundPosition: '200% 0' }
 				}
 			},
 			animation: {
@@ -108,12 +121,18 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'float': 'float 6s ease-in-out infinite',
 				'bounce-slow': 'bounce-slow 4s ease-in-out infinite',
-				'pulse-slow': 'pulse-slow 3s ease-in-out infinite'
+				'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
+				'shimmer': 'shimmer 6s infinite linear'
 			},
 			backgroundImage: {
 				'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
 				'hero-pattern': 'linear-gradient(120deg, rgba(52, 152, 219, 0.8) 0%, rgba(26, 188, 156, 0.8) 100%)',
 				'feature-pattern': 'linear-gradient(135deg, rgba(155, 89, 182, 0.1) 0%, rgba(241, 196, 15, 0.1) 100%)',
+				'shimmer-gradient': 'linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%)',
+				'card-gradient': 'linear-gradient(to bottom right, var(--tw-gradient-stops))',
+				'vibrant-gradient': 'linear-gradient(90deg, #f39c12 0%, #e74c3c 50%, #9b59b6 100%)',
+				'cool-gradient': 'linear-gradient(135deg, #3498db 0%, #1abc9c 100%)',
+				'warm-gradient': 'linear-gradient(135deg, #f1c40f 0%, #f39c12 50%, #e74c3c 100%)'
 			}
 		}
 	},
