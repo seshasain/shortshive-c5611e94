@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -51,7 +50,6 @@ const Dashboard = () => {
     }
   };
 
-  // Dashboard statistics
   const statistics = [
     { label: 'Total Animations', value: '12', icon: Video, color: 'bg-pixar-blue/10 text-pixar-blue' },
     { label: 'Characters Created', value: '28', icon: Users, color: 'bg-pixar-purple/10 text-pixar-purple' },
@@ -96,7 +94,6 @@ const Dashboard = () => {
           </motion.div>
         </div>
         
-        {/* Statistics Cards */}
         <motion.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -130,7 +127,6 @@ const Dashboard = () => {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* New Project Card */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -150,7 +146,6 @@ const Dashboard = () => {
               </Link>
             </motion.div>
             
-            {/* Project Cards - only show 2 most recent */}
             <motion.div
               variants={container}
               initial="hidden"
@@ -164,9 +159,7 @@ const Dashboard = () => {
           </div>
         </div>
         
-        {/* Additional sections */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          {/* Popular Templates */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -204,7 +197,6 @@ const Dashboard = () => {
             </Card>
           </motion.div>
           
-          {/* Learning Resources */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
