@@ -84,32 +84,29 @@ const StoryReview = () => {
   
   // Process data from StoryBuilder when component mounts
   useEffect(() => {
-    // First check for cached data
-    const cachedStory = localStorage.getItem('refinedStory');
-    if (cachedStory) {
-      try {
-        const parsedCache = JSON.parse(cachedStory);
-        setStoryTitle(parsedCache.title);
-        setStoryText(parsedCache.logline);
-        setScenes(parsedCache.scenes.map((scene, index) => ({
-          id: String(index + 1),
-          text: scene.dialogueOrNarration,
-          image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
-          visualDescription: scene.visualDescription
-        })));
-        setStoryType(parsedCache.storyType || 'ai-prompt');
-        setPromptText(parsedCache.originalPrompt || '');
-        if (parsedCache.colorPalette) setColorPalette(parsedCache.colorPalette);
-        console.log('Loaded story from cache');
-        return; // Skip the API call if we have cached data
-      } catch (error) {
-        console.error('Error parsing cached story:', error);
-        localStorage.removeItem('refinedStory'); // Clear invalid cache
+    const state = location.state as { storyData?: StoryData; generatedStory?: any } | null;
+    
+    // If we already have generated story data in the router state, use that
+    if (state?.generatedStory) {
+      setStoryTitle(state.generatedStory.title);
+      setStoryText(state.generatedStory.logline);
+      setScenes(state.generatedStory.scenes.map((scene, index) => ({
+        id: String(index + 1),
+        text: scene.dialogueOrNarration,
+        image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
+        visualDescription: scene.visualDescription
+      })));
+      setStoryType(state.storyData?.storyType || 'ai-prompt');
+      setPromptText(state.storyData?.storyContent || '');
+      if (state.storyData?.settings?.emotion) {
+        const suggestedPalette = emotionToColorMap[state.storyData.settings.emotion] || 'auto';
+        setColorPalette(suggestedPalette);
       }
+      console.log('Using existing story data from navigation state');
+      return;
     }
 
-    const state = location.state as { storyData?: StoryData } | null;
-    if (state && state.storyData) {
+    if (state?.storyData) {
       console.log('Received data from StoryBuilder:', JSON.stringify(state.storyData, null, 2));
       
       // Update state based on the received data
@@ -134,15 +131,15 @@ const StoryReview = () => {
                 visualDescription: scene.visualDescription
               })));
               
-              // Cache the API response
-              const cacheData = {
-                ...response.data,
-                storyType,
-                originalPrompt: storyContent,
-                colorPalette: settings.emotion ? 
-                  emotionToColorMap[settings.emotion] || 'auto' : 'auto'
+              // Update the router state to include the generated story
+              // This will prevent API calls on refresh without using localStorage
+              const newState = {
+                ...state,
+                generatedStory: response.data
               };
-              localStorage.setItem('refinedStory', JSON.stringify(cacheData));
+              
+              // Replace current state with updated one that includes generated story
+              navigate('', { state: newState, replace: true });
             }
           } catch (error) {
             console.error('Error refining story:', error);
@@ -164,7 +161,7 @@ const StoryReview = () => {
     } else {
       console.log('No data received from StoryBuilder, using default values');
     }
-  }, [location.state]);
+  }, [location.state, navigate]);
   
   const handleBack = () => {
     navigate('/build-story');
