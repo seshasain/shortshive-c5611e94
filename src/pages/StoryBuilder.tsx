@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
@@ -36,7 +35,20 @@ const storyPromptExamples = [
   "A shy robot learns to make friends at school"
 ];
 
-const StoryBuilder = () => {
+// Add a throttle utility function at the top of the file after imports
+const throttle = (func, delay) => {
+  let lastCall = 0;
+  return (...args) => {
+    const now = new Date().getTime();
+    if (now - lastCall < delay) {
+      return;
+    }
+    lastCall = now;
+    return func(...args);
+  };
+};
+
+const StoryBuilder = React.memo(() => {
   const navigate = useNavigate();
   const [storyInput, setStoryInput] = useState('');
   const [promptInput, setPromptInput] = useState('');
@@ -47,7 +59,11 @@ const StoryBuilder = () => {
   const [currentExample, setCurrentExample] = useState(0);
   const [addHook, setAddHook] = useState(true);
   
-  const handleContinue = () => {
+  // Add a state to track if user is scrolling
+  const [isScrolling, setIsScrolling] = useState(false);
+  const scrollTimerRef = useRef(null);
+  
+  const handleContinue = useCallback(() => {
     // Prepare the data to be sent to the next view
     const storyData = {
       storyType: promptInput ? 'ai-prompt' : 'manual',
@@ -68,72 +84,109 @@ const StoryBuilder = () => {
     
     // Pass the data to the next view using React Router's state
     navigate('/review-story', { state: { storyData } });
-  };
+  }, [promptInput, storyInput, selectedEmotion, language, voiceStyle, duration, addHook, navigate]);
   
   // Cycle through prompt examples for the placeholder
-  React.useEffect(() => {
-    const interval = setInterval(() => {
-      setCurrentExample((prev) => (prev + 1) % storyPromptExamples.length);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+  // Only if user hasn't entered any text
+  useEffect(() => {
+    if (promptInput.length === 0) {
+      const interval = setInterval(() => {
+        setCurrentExample((prev) => (prev + 1) % storyPromptExamples.length);
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [promptInput]);
+  
+  // Optimize emotion buttons to prevent unnecessary re-renders
+  const emotionButtons = useMemo(() => (
+    <div className="flex flex-wrap gap-2">
+      {emotions.map((emotion) => (
+        <button
+          key={emotion.name}
+          type="button"
+          onClick={() => setSelectedEmotion(emotion.name)}
+          className={`px-3 py-2 rounded-full text-sm ${
+            selectedEmotion === emotion.name
+              ? 'bg-gray-800 text-white font-medium shadow-md'
+              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+          }`}
+        >
+          <div className="flex items-center gap-1.5">
+            <div 
+              className="w-3 h-3 rounded-full" 
+              style={{ backgroundColor: emotion.color }}
+            />
+            <span>{emotion.name}</span>
+          </div>
+        </button>
+      ))}
+    </div>
+  ), [selectedEmotion, setSelectedEmotion]);
+  
+  // Enhance scroll optimization - pause animations during scroll
+  useEffect(() => {
+    const handleScroll = throttle(() => {
+      if (!isScrolling) {
+        setIsScrolling(true);
+      }
+      
+      // Clear previous timer
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      
+      // Set a timer to turn off isScrolling state after scrolling stops
+      scrollTimerRef.current = setTimeout(() => {
+        setIsScrolling(false);
+      }, 150);
+    }, 50); // Reduced throttle time for more responsive handling
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    
+    // Set CSS optimizations for smoother scrolling
+    if (typeof document !== 'undefined') {
+      document.documentElement.style.scrollBehavior = 'auto';
+      // Add GPU acceleration for the entire page
+      document.body.style.transform = 'translateZ(0)';
+    }
+    
+    // Clean up
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      if (typeof document !== 'undefined') {
+        document.documentElement.style.scrollBehavior = '';
+        document.body.style.transform = '';
+      }
+    };
+  }, [isScrolling]);
   
   return (
     <DashboardLayout>
-      <div className="container-custom py-16">
-        {/* Animated background elements */}
-        <div className="absolute top-0 right-0 -z-10 w-full h-full overflow-hidden">
-          <motion.div 
-            animate={{ 
-              y: [0, -25, 0],
-              opacity: [0.08, 0.15, 0.08]
-            }} 
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-40 right-10 w-96 h-96 rounded-full bg-pixar-orange/20 blur-3xl"
-          />
-          <motion.div 
-            animate={{ 
-              y: [0, 25, 0],
-              opacity: [0.07, 0.12, 0.07]
-            }} 
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-20 left-10 w-[500px] h-[500px] rounded-full bg-pixar-blue/20 blur-3xl"
-          />
-        </div>
+      <div className="container-custom py-16 will-change-transform">
+        {/* Remove background circle elements completely */}
         
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12"
-        >
+        {/* Static header */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
           <div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-block mb-3 px-4 py-2 rounded-full bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10"
-            >
+            <div className="inline-block mb-3 px-4 py-2 rounded-full bg-white shadow-lg border border-pixar-blue/10">
               <div className="flex items-center space-x-2">
                 <Sparkles className="h-5 w-5 text-pixar-purple" />
                 <span className="text-sm font-medium text-gray-700">Create Animations in Minutes</span>
               </div>
-            </motion.div>
+            </div>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight">Create Your Animation</h1>
-            <p className="text-lg text-muted-foreground max-w-xl">Craft your story and customize animation settings with our intuitive editor</p>
+            <p className="text-lg text-muted-foreground max-w-xl whitespace-nowrap overflow-hidden text-overflow-ellipsis">Craft your story with our intuitive editor</p>
           </div>
-        </motion.div>
+        </div>
         
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
           {/* Story Input Section - 3 columns */}
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="lg:col-span-3"
-          >
-            <Card className="mb-6 overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
-              <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-4 pt-6">
+          <div className="lg:col-span-3">
+            <Card className="mb-6 overflow-hidden border-pixar-blue/10 bg-white shadow-xl rounded-2xl">
+              <CardHeader className="bg-gray-50 pb-4 pt-6">
                 <CardTitle className="flex items-center text-2xl">
                   <VideoIcon className="mr-3 h-6 w-6 text-pixar-blue" />
                   Story Creation
@@ -219,15 +272,27 @@ const StoryBuilder = () => {
                 </Tabs>
               </CardContent>
             </Card>
-          </motion.div>
+            
+            {/* Move the Continue button here */}
+            <div className="mb-6">
+              <Button 
+                onClick={handleContinue} 
+                disabled={!promptInput && !storyInput} 
+                className="w-full bg-pixar-blue text-white hover:bg-pixar-darkblue pixar-button rounded-xl py-6 text-lg font-medium shadow-lg hover:shadow-xl transition-transform duration-200 hover:scale-[1.02]"
+              >
+                Continue to Story Refinement
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
+              {!promptInput && !storyInput && (
+                <p className="text-center text-red-500 text-xs mt-3">
+                  Please enter a story prompt or write a story manually to continue
+                </p>
+              )}
+            </div>
+          </div>
           
           {/* Settings Panel - 2 columns */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-2"
-          >
+          <div className="lg:col-span-2">
             <Card className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10 mb-6">
               <CardHeader className="pb-2 pt-6">
                 <CardTitle className="text-xl">Basic Settings</CardTitle>
@@ -239,29 +304,7 @@ const StoryBuilder = () => {
                     <Heart className="mr-2 h-4 w-4 text-pixar-red" />
                     Primary Emotion
                   </Label>
-                  <div className="flex flex-wrap gap-2">
-                    {emotions.map((emotion) => (
-                      <button
-                        key={emotion.name}
-                        type="button"
-                        onClick={() => setSelectedEmotion(emotion.name)}
-                        className={`px-3 py-2 rounded-full text-sm transition-all ${
-                          selectedEmotion === emotion.name
-                            ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white font-medium shadow-md transform scale-105'
-                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                      >
-                        <div className="flex items-center gap-1.5">
-                          <div 
-                            className="w-3 h-3 rounded-full" 
-                            style={{ backgroundColor: emotion.color }}
-                          />
-                          <span>{emotion.name}</span>
-                          <span className="ml-1 opacity-70">{emotion.icon}</span>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                  {emotionButtons}
                 </div>
                 
                 {/* Hook Option */}
@@ -349,99 +392,13 @@ const StoryBuilder = () => {
                 </div>
               </CardContent>
             </Card>
-            
-            {/* Summary Card */}
-            <Card className="mb-6 bg-gradient-to-br from-white/90 to-white/50 backdrop-blur-xl shadow-xl rounded-2xl border-pixar-blue/20">
-              <CardHeader className="pb-2 pt-6">
-                <CardTitle className="text-xl flex items-center">
-                  <ArrowRight className="mr-2 h-5 w-5 text-pixar-blue" />
-                  Summary
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 text-sm">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-                    <div className="text-muted-foreground">Story Type:</div>
-                    <div className="font-medium">
-                      {promptInput ? 'AI-Assisted' : storyInput ? 'Manual' : 'Not started'}
-                    </div>
-                    
-                    <div className="text-muted-foreground">Story Length:</div>
-                    <div className="font-medium">
-                      {promptInput 
-                        ? `${promptInput.length} chars (prompt)`
-                        : storyInput 
-                          ? `${storyInput.length} chars` 
-                          : 'No content yet'}
-                    </div>
-                    
-                    <div className="text-muted-foreground">Primary Emotion:</div>
-                    <div className="font-medium">
-                      {selectedEmotion ? (
-                        <span className="flex items-center">
-                          <span 
-                            className="w-2 h-2 rounded-full mr-1.5" 
-                            style={{ 
-                              backgroundColor: emotions.find(e => e.name === selectedEmotion)?.color 
-                            }}
-                          />
-                          {selectedEmotion}
-                        </span>
-                      ) : 'Not selected'}
-                    </div>
-                    
-                    <div className="text-muted-foreground">Language:</div>
-                    <div className="font-medium">{language}</div>
-                    
-                    <div className="text-muted-foreground">Voice Style:</div>
-                    <div className="font-medium">{voiceStyle}</div>
-                    
-                    <div className="text-muted-foreground">Duration:</div>
-                    <div className="font-medium">{duration} seconds</div>
-                    
-                    <div className="text-muted-foreground">Add Hook:</div>
-                    <div className="font-medium">{addHook ? 'Yes' : 'No'}</div>
-                  </div>
-                  
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 rounded-xl mt-5 border border-blue-200/50">
-                    <div className="text-pixar-blue font-medium mb-1 text-xs">Next Step Preview:</div>
-                    <div className="text-sm text-gray-700">
-                      {promptInput 
-                        ? `Your prompt "${promptInput.substring(0, 40)}${promptInput.length > 40 ? '...' : ''}" will be used to generate a full story.`
-                        : storyInput
-                          ? `Your story (${storyInput.length} characters) will be divided into scenes for animation.`
-                          : 'Please enter a story prompt or write a story manually to continue.'}
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            {/* Continue Button */}
-            <motion.div 
-              className="mt-6"
-              whileHover={{ scale: 1.03 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <Button 
-                onClick={handleContinue} 
-                disabled={!promptInput && !storyInput} 
-                className="w-full bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple pixar-button rounded-xl py-6 text-lg font-medium shadow-lg hover:shadow-xl"
-              >
-                Continue to Story Refinement
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              {!promptInput && !storyInput && (
-                <p className="text-center text-red-500 text-xs mt-3">
-                  Please enter a story prompt or write a story manually to continue
-                </p>
-              )}
-            </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </DashboardLayout>
   );
-};
+});
+
+StoryBuilder.displayName = "StoryBuilder";
 
 export default StoryBuilder;
