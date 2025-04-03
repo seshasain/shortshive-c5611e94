@@ -1,10 +1,16 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Edit, Check, X, Eye, Film } from 'lucide-react';
-import { Card } from '@/components/ui/card';
+import { Edit, Check, X, Eye, Film, Save } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 
 type Scene = {
@@ -21,122 +27,132 @@ interface SceneCardProps {
   delay?: number;
 }
 
-const SceneCard: React.FC<SceneCardProps> = ({ scene, index, onEdit, delay = 0 }) => {
-  const [editing, setEditing] = useState(false);
+export const SceneCard = ({ scene, index, onEdit, delay = 0 }) => {
+  const [isEditing, setIsEditing] = useState(false);
   const [editText, setEditText] = useState(scene.text);
-  const [showDescription, setShowDescription] = useState(false);
+  const [showVisualDescription, setShowVisualDescription] = useState(false);
   
   const handleSave = () => {
     onEdit(scene.id, editText);
-    setEditing(false);
+    setIsEditing(false);
   };
   
   const handleCancel = () => {
     setEditText(scene.text);
-    setEditing(false);
+    setIsEditing(false);
   };
   
-  // Create a gradient background color based on the scene number
+  // Update gradientColors to use Pixar theme
   const gradientColors = [
-    'from-blue-50 to-indigo-50 border-blue-200',
-    'from-purple-50 to-pink-50 border-purple-200',
-    'from-green-50 to-teal-50 border-green-200',
-    'from-orange-50 to-amber-50 border-orange-200',
-    'from-red-50 to-pink-50 border-red-200',
+    'from-pixar-blue/10 to-pixar-purple/10 border-pixar-blue/20',
+    'from-pixar-orange/10 to-pixar-purple/10 border-pixar-orange/20',
+    'from-pixar-purple/10 to-pixar-blue/10 border-pixar-purple/20',
+    'from-pixar-blue/10 to-pixar-orange/10 border-pixar-blue/20',
   ];
   
-  const bgGradient = gradientColors[index % gradientColors.length];
+  const colorIndex = index % gradientColors.length;
+  const gradientColor = gradientColors[colorIndex];
   
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.4, delay }}
-      whileHover={{ y: -5 }}
+      transition={{ duration: 0.5, delay: 0.2 + delay }}
       className="h-full"
     >
-      <Card className={`overflow-hidden border hover:shadow-md transition-all duration-300 h-full bg-gradient-to-br ${bgGradient}`}>
-        <div className="p-4">
-          <div className="flex justify-between items-start mb-3">
-            <Badge variant="outline" className="bg-white/80">
-              <Film className="h-3 w-3 mr-1" /> Scene {index + 1}
-            </Badge>
-          </div>
-          
-          {editing ? (
-            <div>
-              <Textarea 
-                value={editText}
-                onChange={(e) => setEditText(e.target.value)}
-                className="min-h-[120px] text-sm bg-white/80"
-              />
-              <div className="mt-2 flex justify-end space-x-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  onClick={handleCancel}
-                  className="h-8 px-2"
+      <Card className={`bg-gradient-to-br ${gradientColor} overflow-hidden h-full shadow-md rounded-xl border transition-all hover:shadow-lg`}>
+        <CardContent className="p-3">
+          <div className="bg-white/80 backdrop-blur-sm rounded-lg p-4 h-full shadow-sm flex flex-col">
+            <div className="flex justify-between items-start mb-3">
+              <span className="inline-block px-3 py-1 bg-white rounded-full text-sm font-medium shadow-sm text-pixar-blue border border-pixar-blue/20">
+                Scene {index + 1}
+              </span>
+              <div className="flex space-x-1">
+                {scene.visualDescription && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 w-8 p-0 rounded-full bg-pixar-purple/10 hover:bg-pixar-purple/20 text-pixar-purple"
+                    onClick={() => setShowVisualDescription(true)}
+                  >
+                    <Eye className="h-4 w-4" />
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0 rounded-full bg-pixar-blue/10 hover:bg-pixar-blue/20 text-pixar-blue"
+                  onClick={() => setIsEditing(true)}
                 >
-                  <X className="h-4 w-4" />
-                </Button>
-                <Button 
-                  size="sm" 
-                  onClick={handleSave}
-                  className="h-8 px-3 bg-pixar-blue text-white hover:bg-pixar-darkblue"
-                >
-                  <Check className="h-4 w-4 mr-1" />
-                  Save
+                  <Edit className="h-4 w-4" />
                 </Button>
               </div>
             </div>
-          ) : (
-            <div className="relative min-h-[100px] bg-white/80 rounded-md p-3 shadow-sm">
-              <p className="text-sm pr-6">{scene.text}</p>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setEditing(true)}
-                className="absolute top-2 right-2 h-6 w-6 p-0 rounded-full hover:bg-gray-100"
-              >
-                <Edit className="h-3.5 w-3.5" />
-              </Button>
-              
-              {scene.visualDescription && (
-                <div className="mt-2 pt-2 border-t border-dashed border-gray-200">
-                  <div className="flex justify-between items-start">
-                    <p className="text-xs text-gray-500 line-clamp-2 flex-1 pr-2">
-                      <span className="font-medium">Visual: </span>
-                      {scene.visualDescription.substring(0, 120)}...
-                    </p>
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={() => setShowDescription(true)}
-                      className="h-6 w-6 p-0 rounded-full flex-shrink-0 bg-gray-100 hover:bg-gray-200"
-                    >
-                      <Eye className="h-3.5 w-3.5 text-pixar-blue" />
-                    </Button>
-                  </div>
-                </div>
-              )}
+
+            <div className="flex-grow">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap">{scene.text}</p>
             </div>
-          )}
-        </div>
+          </div>
+        </CardContent>
       </Card>
-      
-      {/* Visual Description Dialog */}
-      <Dialog open={showDescription} onOpenChange={setShowDescription}>
-        <DialogContent className="max-w-md">
+
+      {/* Edit Dialog */}
+      <Dialog open={isEditing} onOpenChange={setIsEditing}>
+        <DialogContent className="max-w-md bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10">
           <DialogHeader>
-            <DialogTitle>Scene {index + 1} Visual Description</DialogTitle>
+            <DialogTitle className="text-xl font-bold flex items-center">
+              <Edit className="mr-2 h-5 w-5 text-pixar-blue" />
+              Edit Scene {index + 1}
+            </DialogTitle>
           </DialogHeader>
-          <div className="mt-4">
-            <div className="bg-gray-50 p-4 rounded-md text-sm">
-              {scene.visualDescription}
-            </div>
+          <Textarea
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+            rows={6}
+            className="border-pixar-blue/20 focus:border-pixar-blue focus-visible:ring-pixar-blue/40 text-gray-700 text-base shadow-sm"
+          />
+          <div className="flex justify-end gap-2 mt-4">
+            <Button variant="outline" onClick={() => setIsEditing(false)} className="border-gray-300">
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSave}
+              className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple shadow-sm"
+            >
+              <Save className="mr-2 h-4 w-4" />
+              Save Changes
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Visual Description Dialog */}
+      {scene.visualDescription && (
+        <Dialog open={showVisualDescription} onOpenChange={setShowVisualDescription}>
+          <DialogContent className="max-w-md bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10">
+            <DialogHeader>
+              <DialogTitle className="text-xl font-bold flex items-center">
+                <Eye className="mr-2 h-5 w-5 text-pixar-purple" />
+                Visual Description
+              </DialogTitle>
+              <DialogDescription>
+                How this scene will appear visually in your animation
+              </DialogDescription>
+            </DialogHeader>
+            <div className="bg-gradient-to-br from-pixar-purple/5 to-pixar-blue/5 rounded-xl p-4 border border-pixar-purple/10">
+              <p className="text-gray-700 whitespace-pre-wrap">{scene.visualDescription}</p>
+            </div>
+            <div className="flex justify-end mt-4">
+              <Button 
+                onClick={() => setShowVisualDescription(false)}
+                className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple shadow-sm"
+              >
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </motion.div>
   );
 };
