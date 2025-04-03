@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { refineStory } from '@/services/api';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -69,9 +70,44 @@ const StoryReview = () => {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [colorPalette, setColorPalette] = useState('auto');
   const [activeTab, setActiveTab] = useState('story');
+  const [isLoading, setIsLoading] = useState(false);
+  const [storyTitle, setStoryTitle] = useState('');
+  
+  // Define emotionToColorMap outside of useEffect to avoid duplication
+  const emotionToColorMap: Record<string, string> = {
+    'Happiness': 'vibrant',
+    'Sadness': 'pastel',
+    'Anger': 'retro',
+    'Fear': 'fantasy',
+    'Love': 'nature',
+  };
   
   // Process data from StoryBuilder when component mounts
   useEffect(() => {
+    // First check for cached data
+    const cachedStory = localStorage.getItem('refinedStory');
+    if (cachedStory) {
+      try {
+        const parsedCache = JSON.parse(cachedStory);
+        setStoryTitle(parsedCache.title);
+        setStoryText(parsedCache.logline);
+        setScenes(parsedCache.scenes.map((scene, index) => ({
+          id: String(index + 1),
+          text: scene.dialogueOrNarration,
+          image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
+          visualDescription: scene.visualDescription
+        })));
+        setStoryType(parsedCache.storyType || 'ai-prompt');
+        setPromptText(parsedCache.originalPrompt || '');
+        if (parsedCache.colorPalette) setColorPalette(parsedCache.colorPalette);
+        console.log('Loaded story from cache');
+        return; // Skip the API call if we have cached data
+      } catch (error) {
+        console.error('Error parsing cached story:', error);
+        localStorage.removeItem('refinedStory'); // Clear invalid cache
+      }
+    }
+
     const state = location.state as { storyData?: StoryData } | null;
     if (state && state.storyData) {
       console.log('Received data from StoryBuilder:', JSON.stringify(state.storyData, null, 2));
@@ -82,28 +118,45 @@ const StoryReview = () => {
       setStoryType(storyType);
       
       if (storyType === 'ai-prompt') {
-        // For AI prompts, we would typically want to store the prompt 
-        // and potentially generate a story from it
         setPromptText(storyContent);
-        // In a real app, you might make an API call here to generate the story
-        console.log(`Would generate a story based on prompt: "${storyContent}"`);
+        // Make API call to refine the story
+        const refineStoryData = async () => {
+          setIsLoading(true);
+          try {
+            const response = await refineStory(state.storyData);
+            if (response.success && response.data) {
+              setStoryTitle(response.data.title);
+              setStoryText(response.data.logline);
+              setScenes(response.data.scenes.map((scene, index) => ({
+                id: String(index + 1),
+                text: scene.dialogueOrNarration,
+                image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
+                visualDescription: scene.visualDescription
+              })));
+              
+              // Cache the API response
+              const cacheData = {
+                ...response.data,
+                storyType,
+                originalPrompt: storyContent,
+                colorPalette: settings.emotion ? 
+                  emotionToColorMap[settings.emotion] || 'auto' : 'auto'
+              };
+              localStorage.setItem('refinedStory', JSON.stringify(cacheData));
+            }
+          } catch (error) {
+            console.error('Error refining story:', error);
+          } finally {
+            setIsLoading(false);
+          }
+        };
+        refineStoryData();
       } else {
-        // For manual stories, just use the content directly
         setStoryText(storyContent);
       }
       
       // Use settings to inform the UI
       if (settings.emotion) {
-        // Example: automatically select a color palette based on emotion
-        const emotionToColorMap: Record<string, string> = {
-          'Happiness': 'vibrant',
-          'Sadness': 'pastel',
-          'Anger': 'retro',
-          'Fear': 'fantasy',
-          'Love': 'nature',
-          // Default to auto for other emotions
-        };
-        
         const suggestedPalette = emotionToColorMap[settings.emotion] || 'auto';
         setColorPalette(suggestedPalette);
         console.log(`Set color palette to ${suggestedPalette} based on emotion: ${settings.emotion}`);
@@ -156,7 +209,9 @@ const StoryReview = () => {
           className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8"
         >
           <div>
-            <h1 className="text-3xl md:text-4xl font-bold mb-2 pixar-text-gradient">Review Your Story</h1>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 pixar-text-gradient">
+              {storyTitle ? `"${storyTitle}"` : 'Review Your Story'}
+            </h1>
             <p className="text-muted-foreground">Review, edit, and customize before generating your animation</p>
           </div>
           <div className="flex space-x-3 mt-4 md:mt-0">
@@ -178,6 +233,32 @@ const StoryReview = () => {
             </Button>
           </div>
         </motion.div>
+        
+        {/* Loading Animation */}
+        {isLoading && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center"
+          >
+            <div className="bg-white rounded-lg p-8 max-w-md w-full shadow-lg">
+              <div className="flex flex-col items-center">
+                <div className="relative w-24 h-24 mb-6">
+                  <motion.div
+                    className="absolute inset-0 rounded-full border-t-4 border-pixar-blue"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
+                  />
+                  <Sparkles className="absolute inset-0 m-auto h-10 w-10 text-pixar-blue" />
+                </div>
+                <h3 className="text-xl font-bold mb-2">Crafting your story...</h3>
+                <p className="text-muted-foreground text-center">
+                  Our AI is creating a magical story just for you. This might take a moment as we craft characters, scenes, and dialogue.
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
         
         {/* Main Tabs Navigation */}
         <Tabs defaultValue="story" value={activeTab} onValueChange={setActiveTab} className="mb-6">
@@ -269,7 +350,7 @@ const StoryReview = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {scenes.map((scene, index) => (
                         <SceneCard 
                           key={scene.id}
