@@ -1,13 +1,12 @@
+
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { toast } from "sonner";
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { FilmIcon, CheckCircle, ArrowRight, Download, Share2 } from 'lucide-react';
-import { checkAnimationStatus } from '@/services/animationService';
 
 const steps = [
   { id: 1, name: 'Processing Story' },
@@ -20,74 +19,36 @@ const steps = [
 
 const AnimationProgress = () => {
   const navigate = useNavigate();
-  const location = useLocation();
   const [currentStep, setCurrentStep] = useState(1);
   const [progress, setProgress] = useState(10);
   const [isComplete, setIsComplete] = useState(false);
-  const [animationId, setAnimationId] = useState<string | null>(null);
-  const [resultUrl, setResultUrl] = useState<string | null>(null);
   
-  // Get animation ID from location state
   useEffect(() => {
-    const state = location.state as { animationId?: string } | null;
-    if (state && state.animationId) {
-      setAnimationId(state.animationId);
-      console.log("Animation ID received:", state.animationId);
-    } else {
-      console.log("No animation ID received, using demo mode");
-      // In a real app, you might redirect back to the dashboard
-      // For demo purposes, we'll proceed with a mock animation ID
-      setAnimationId("mock-animation-" + Date.now());
-    }
-  }, [location.state]);
-  
-  // Poll animation status
-  useEffect(() => {
-    if (!animationId) return;
-    
-    const checkStatus = async () => {
-      try {
-        const statusData = await checkAnimationStatus(animationId);
-        
-        setProgress(statusData.progress);
-        setCurrentStep(statusData.currentStep);
-        
-        if (statusData.status === 'completed') {
-          setIsComplete(true);
-          setResultUrl(statusData.resultUrl || null);
-          toast.success("Animation completed successfully!");
-        } else if (statusData.status === 'failed') {
-          toast.error("Animation generation failed. Please try again.");
-          // In a real app, you might offer a retry option
-        }
-      } catch (error) {
-        console.error("Error checking animation status:", error);
-      }
-    };
-    
-    // Initial check
-    checkStatus();
-    
-    // Set up polling every 2 seconds until complete
     const interval = setInterval(() => {
-      if (isComplete) {
-        clearInterval(interval);
-        return;
-      }
-      checkStatus();
-    }, 2000);
+      setProgress(prev => {
+        if (prev >= 100) {
+          clearInterval(interval);
+          setIsComplete(true);
+          return 100;
+        }
+        
+        // Move to next step at certain thresholds
+        if (prev === 25) setCurrentStep(2);
+        if (prev === 40) setCurrentStep(3);
+        if (prev === 55) setCurrentStep(4);
+        if (prev === 70) setCurrentStep(5);
+        if (prev === 85) setCurrentStep(6);
+        
+        return prev + 1;
+      });
+    }, 200);
     
     return () => clearInterval(interval);
-  }, [animationId, isComplete]);
+  }, []);
   
   const handleViewAnimation = () => {
     // In a real app, this would take you to the animation viewer
-    if (resultUrl) {
-      // Open the animation in a new tab or navigate to a viewer
-      window.open(resultUrl, '_blank');
-    } else {
-      navigate('/dashboard');
-    }
+    navigate('/dashboard');
   };
   
   return (
@@ -131,19 +92,10 @@ const AnimationProgress = () => {
                   </p>
                   
                   <div className="aspect-video max-w-lg mx-auto mb-8 bg-gray-900 rounded-lg overflow-hidden flex items-center justify-center">
-                    {resultUrl ? (
-                      <video 
-                        src={resultUrl} 
-                        controls 
-                        className="w-full h-full"
-                        poster="https://source.unsplash.com/random/800x450?animation=1"
-                      />
-                    ) : (
-                      <div className="p-10 text-center">
-                        <FilmIcon className="h-16 w-16 mx-auto mb-4 text-white opacity-60" />
-                        <p className="text-white opacity-70">Animation preview</p>
-                      </div>
-                    )}
+                    <div className="p-10 text-center">
+                      <FilmIcon className="h-16 w-16 mx-auto mb-4 text-white opacity-60" />
+                      <p className="text-white opacity-70">Animation preview</p>
+                    </div>
                   </div>
                   
                   <div className="flex flex-wrap justify-center gap-4">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { toast } from "sonner";
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +13,6 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import SceneCard from '@/components/dashboard/SceneCard';
-import { generateScenes, generateAnimation, StoryData } from '@/services/animationService';
 
 const mockScenes = [
   {
@@ -43,6 +41,7 @@ const colorPalettes = [
   { id: 'nature', name: 'Nature', colors: ['#2D6A4F', '#40916C', '#52B788', '#95D5B2', '#D8F3DC'] }
 ];
 
+// Type definitions for the incoming data
 interface StoryData {
   storyType: 'ai-prompt' | 'manual';
   storyContent: string;
@@ -60,6 +59,7 @@ const StoryReview = () => {
   const navigate = useNavigate();
   const location = useLocation();
   
+  // Default values for when there's no state
   const [storyText, setStoryText] = useState("Once upon a time in a colorful underwater world, there lived a curious little fish named Finn. Unlike other fish who were content to swim in the same coral reef, Finn dreamed of exploring the vast ocean beyond. One day, a strong current swept Finn far from home into an unfamiliar part of the ocean...");
   const [storyType, setStoryType] = useState<'ai-prompt' | 'manual'>('manual');
   const [promptText, setPromptText] = useState("");
@@ -69,30 +69,32 @@ const StoryReview = () => {
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [colorPalette, setColorPalette] = useState('auto');
   const [activeTab, setActiveTab] = useState('story');
-  const [isGeneratingScenes, setIsGeneratingScenes] = useState(false);
-  const [isGeneratingAnimation, setIsGeneratingAnimation] = useState(false);
   
+  // Process data from StoryBuilder when component mounts
   useEffect(() => {
     const state = location.state as { storyData?: StoryData } | null;
     if (state && state.storyData) {
       console.log('Received data from StoryBuilder:', JSON.stringify(state.storyData, null, 2));
       
+      // Update state based on the received data
       const { storyType, storyContent, settings } = state.storyData;
       
       setStoryType(storyType);
       
       if (storyType === 'ai-prompt') {
+        // For AI prompts, we would typically want to store the prompt 
+        // and potentially generate a story from it
         setPromptText(storyContent);
-        setStoryText(storyContent);
-        
-        handleGenerateScenes(storyContent, settings);
+        // In a real app, you might make an API call here to generate the story
+        console.log(`Would generate a story based on prompt: "${storyContent}"`);
       } else {
+        // For manual stories, just use the content directly
         setStoryText(storyContent);
-        
-        handleGenerateScenes(storyContent, settings);
       }
       
+      // Use settings to inform the UI
       if (settings.emotion) {
+        // Example: automatically select a color palette based on emotion
         const emotionToColorMap: Record<string, string> = {
           'Happiness': 'vibrant',
           'Sadness': 'pastel',
@@ -111,76 +113,37 @@ const StoryReview = () => {
     }
   }, [location.state]);
   
-  const handleGenerateScenes = async (content: string, settings: StoryData["settings"]) => {
-    setIsGeneratingScenes(true);
-    
-    try {
-      toast.info("Generating scenes from your story...");
-      const generatedScenes = await generateScenes(content, settings);
-      setScenes(generatedScenes);
-    } catch (error) {
-      console.error("Failed to generate scenes:", error);
-      toast.error("Failed to generate scenes. Using default scenes instead.");
-    } finally {
-      setIsGeneratingScenes(false);
-    }
-  };
-  
   const handleBack = () => {
     navigate('/build-story');
   };
   
-  const handleGenerate = async () => {
-    setIsGeneratingAnimation(true);
+  const handleGenerate = () => {
+    // Prepare the final data for animation generation
+    const animationData = {
+      storyContent: storyText,
+      scenes: scenes,
+      visualSettings: {
+        colorPalette,
+        aspectRatio
+      },
+      originalStoryType: storyType,
+      originalPrompt: storyType === 'ai-prompt' ? promptText : null,
+      timestamp: new Date().toISOString()
+    };
     
-    try {
-      const animationData = {
-        storyContent: storyText,
-        scenes: scenes,
-        visualSettings: {
-          colorPalette,
-          aspectRatio
-        },
-        originalStoryType: storyType,
-        originalPrompt: storyType === 'ai-prompt' ? promptText : null,
-        timestamp: new Date().toISOString()
-      };
-      
-      console.log('Sending animation data to generation service:');
-      console.log(JSON.stringify(animationData, null, 2));
-      
-      toast.info("Starting animation generation...");
-      
-      const { animationId } = await generateAnimation(animationData);
-      
-      navigate('/generating', { state: { animationId } });
-    } catch (error) {
-      console.error("Failed to start animation generation:", error);
-      toast.error("Failed to start animation generation. Please try again.");
-    } finally {
-      setIsGeneratingAnimation(false);
-    }
+    // Log the complete data being sent for animation generation
+    console.log('Sending animation data to generation service:');
+    console.log(JSON.stringify(animationData, null, 2));
+    
+    // In a real implementation, you might make an API call here
+    // For now, just navigate to the next page
+    navigate('/generating');
   };
   
   const handleEditScene = (id: string, newText: string) => {
     setScenes(scenes.map(scene => 
       scene.id === id ? { ...scene, text: newText } : scene
     ));
-  };
-  
-  const handleRegenerateScenes = async () => {
-    const state = location.state as { storyData?: StoryData } | null;
-    if (state && state.storyData) {
-      handleGenerateScenes(storyText, state.storyData.settings);
-    } else {
-      handleGenerateScenes(storyText, {
-        emotion: "",
-        language: "English",
-        voiceStyle: "Friendly",
-        duration: 60,
-        addHook: true
-      });
-    }
   };
   
   return (
@@ -216,6 +179,7 @@ const StoryReview = () => {
           </div>
         </motion.div>
         
+        {/* Main Tabs Navigation */}
         <Tabs defaultValue="story" value={activeTab} onValueChange={setActiveTab} className="mb-6">
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="story" className="flex items-center gap-2">
@@ -228,7 +192,9 @@ const StoryReview = () => {
             </TabsTrigger>
           </TabsList>
           
+          {/* Story Content Tab */}
           <TabsContent value="story" className="space-y-6">
+            {/* Info Banner */}
             {storyType === 'ai-prompt' && (
               <motion.div 
                 initial={{ opacity: 0, y: -10 }}
@@ -248,6 +214,7 @@ const StoryReview = () => {
             )}
             
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Complete Story Section */}
               <motion.div 
                 className="lg:col-span-1"
                 initial={{ opacity: 0, x: -20 }}
@@ -284,6 +251,7 @@ const StoryReview = () => {
                 </Card>
               </motion.div>
               
+              {/* Scene Breakdown */}
               <motion.div 
                 className="lg:col-span-2"
                 initial={{ opacity: 0, x: 20 }}
@@ -301,39 +269,22 @@ const StoryReview = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    {isGeneratingScenes ? (
-                      <div className="flex flex-col items-center justify-center py-8">
-                        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pixar-blue mb-4"></div>
-                        <p className="text-muted-foreground">Generating scenes from your story...</p>
-                      </div>
-                    ) : (
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {scenes.map((scene, index) => (
-                          <SceneCard 
-                            key={scene.id}
-                            scene={scene}
-                            index={index}
-                            onEdit={handleEditScene}
-                            delay={index * 0.1}
-                          />
-                        ))}
-                      </div>
-                    )}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {scenes.map((scene, index) => (
+                        <SceneCard 
+                          key={scene.id}
+                          scene={scene}
+                          index={index}
+                          onEdit={handleEditScene}
+                          delay={index * 0.1}
+                        />
+                      ))}
+                    </div>
                   </CardContent>
                   <CardFooter className="flex justify-between items-center border-t pt-4">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleRegenerateScenes}
-                      disabled={isGeneratingScenes}
-                    >
-                      {isGeneratingScenes ? (
-                        <span className="animate-pulse">Regenerating...</span>
-                      ) : (
-                        <>
-                          <Wand2 className="mr-2 h-4 w-4" />
-                          Regenerate Scenes
-                        </>
-                      )}
+                    <Button variant="outline">
+                      <Wand2 className="mr-2 h-4 w-4" />
+                      Regenerate Scenes
                     </Button>
                     <div className="text-sm text-muted-foreground">
                       {scenes.length} scenes total
@@ -355,6 +306,7 @@ const StoryReview = () => {
             </div>
           </TabsContent>
           
+          {/* Visual Settings Tab */}
           <TabsContent value="settings">
             <motion.div
               initial={{ opacity: 0 }}
@@ -362,6 +314,7 @@ const StoryReview = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-6">
+                {/* Animation Settings Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
@@ -373,6 +326,7 @@ const StoryReview = () => {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-8">
+                    {/* Color Palette */}
                     <div>
                       <Label className="text-base mb-4 flex items-center">
                         <Palette className="mr-2 h-4 w-4 text-pixar-blue" />
@@ -419,6 +373,7 @@ const StoryReview = () => {
                       </RadioGroup>
                     </div>
                     
+                    {/* Aspect Ratio */}
                     <div>
                       <Label className="text-base mb-4 flex items-center">
                         <VideoIcon className="mr-2 h-4 w-4 text-pixar-blue" />
@@ -475,6 +430,7 @@ const StoryReview = () => {
                   </CardContent>
                 </Card>
                 
+                {/* Animation Preview Card */}
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center">
@@ -520,6 +476,7 @@ const StoryReview = () => {
               </div>
             </motion.div>
             
+            {/* Generate Button */}
             <motion.div 
               className="flex justify-end gap-4 mt-8"
               whileHover={{ scale: 1.03 }}
@@ -534,23 +491,17 @@ const StoryReview = () => {
               </Button>
               <Button 
                 onClick={handleGenerate}
-                disabled={isGeneratingAnimation}
                 className="bg-pixar-blue text-white hover:bg-pixar-darkblue pixar-button"
               >
-                {isGeneratingAnimation ? (
-                  <span className="animate-pulse">Starting Generation...</span>
-                ) : (
-                  <>
-                    Generate Animation
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                )}
+                Generate Animation
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </motion.div>
           </TabsContent>
         </Tabs>
       </div>
       
+      {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
         <DialogContent className="max-w-3xl">
           <DialogHeader>
