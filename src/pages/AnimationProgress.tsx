@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -7,6 +6,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { FilmIcon, CheckCircle, ArrowRight, Download, Share2 } from 'lucide-react';
+import { getAnimationProgress } from '@/services/animationService';
 
 const steps = [
   { id: 1, name: 'Processing Story' },
@@ -32,7 +32,6 @@ const AnimationProgress = () => {
           return 100;
         }
         
-        // Move to next step at certain thresholds
         if (prev === 25) setCurrentStep(2);
         if (prev === 40) setCurrentStep(3);
         if (prev === 55) setCurrentStep(4);
@@ -47,10 +46,47 @@ const AnimationProgress = () => {
   }, []);
   
   const handleViewAnimation = () => {
-    // In a real app, this would take you to the animation viewer
     navigate('/dashboard');
   };
   
+  const getStepDescription = (stepId: number) => {
+    switch(stepId) {
+      case 1:
+        return "Analyzing your story and breaking it down into scenes...";
+      case 2:
+        return "Creating characters based on your story description...";
+      case 3:
+        return "Building scenery and environments for each scene...";
+      case 4:
+        return "Generating animation frames and adding motion...";
+      case 5:
+        return "Adding voiceovers and soundtrack to your animation...";
+      case 6:
+        return "Applying final touches and optimizing video quality...";
+      default:
+        return "";
+    }
+  };
+
+  const getStepProgress = (stepId: number, overallProgress: number) => {
+    const stepRanges = {
+      1: { start: 0, end: 25 },
+      2: { start: 25, end: 40 },
+      3: { start: 40, end: 55 },
+      4: { start: 55, end: 70 },
+      5: { start: 70, end: 85 },
+      6: { start: 85, end: 100 }
+    };
+    
+    const range = stepRanges[stepId as keyof typeof stepRanges];
+    if (!range) return 0;
+    
+    if (overallProgress < range.start) return 0;
+    if (overallProgress >= range.end) return 100;
+    
+    return ((overallProgress - range.start) / (range.end - range.start)) * 100;
+  };
+
   return (
     <DashboardLayout>
       <div className="container-custom py-10">
@@ -209,47 +245,6 @@ const AnimationProgress = () => {
       </div>
     </DashboardLayout>
   );
-};
-
-// Helper functions
-const getStepDescription = (stepId: number) => {
-  switch(stepId) {
-    case 1:
-      return "Analyzing your story and breaking it down into scenes...";
-    case 2:
-      return "Creating characters based on your story description...";
-    case 3:
-      return "Building scenery and environments for each scene...";
-    case 4:
-      return "Generating animation frames and adding motion...";
-    case 5:
-      return "Adding voiceovers and soundtrack to your animation...";
-    case 6:
-      return "Applying final touches and optimizing video quality...";
-    default:
-      return "";
-  }
-};
-
-const getStepProgress = (stepId: number, overallProgress: number) => {
-  // Calculate progress within the current step
-  const stepRanges = {
-    1: { start: 0, end: 25 },
-    2: { start: 25, end: 40 },
-    3: { start: 40, end: 55 },
-    4: { start: 55, end: 70 },
-    5: { start: 70, end: 85 },
-    6: { start: 85, end: 100 }
-  };
-  
-  const range = stepRanges[stepId as keyof typeof stepRanges];
-  if (!range) return 0;
-  
-  if (overallProgress < range.start) return 0;
-  if (overallProgress >= range.end) return 100;
-  
-  // Calculate percentage within this step's range
-  return ((overallProgress - range.start) / (range.end - range.start)) * 100;
 };
 
 export default AnimationProgress;
