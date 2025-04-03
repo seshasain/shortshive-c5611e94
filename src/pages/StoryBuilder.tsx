@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -19,14 +18,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 
 const emotions = [
-  { name: 'Happiness', color: '#FFD166', icon: <Smile className="h-3 w-3" /> },
-  { name: 'Sadness', color: '#118AB2', icon: <Frown className="h-3 w-3" /> },
-  { name: 'Anger', color: '#EF476F', icon: <FlameIcon className="h-3 w-3" /> },
-  { name: 'Fear', color: '#6B6B6B', icon: <Eye className="h-3 w-3" /> },
-  { name: 'Surprise', color: '#06D6A0', icon: <Zap className="h-3 w-3" /> },
-  { name: 'Love', color: '#E26CA5', icon: <Heart className="h-3 w-3" /> },
-  { name: 'Wonder', color: '#3A86FF', icon: <Star className="h-3 w-3" /> },
-  { name: 'Calm', color: '#8A6552', icon: <Coffee className="h-3 w-3" /> }
+  { name: 'Happiness', color: '#FFD166' },
+  { name: 'Sadness', color: '#118AB2' },
+  { name: 'Anger', color: '#EF476F' },
+  { name: 'Fear', color: '#6B6B6B' },
+  { name: 'Surprise', color: '#06D6A0' },
+  { name: 'Love', color: '#E26CA5' },
+  { name: 'Wonder', color: '#3A86FF' },
+  { name: 'Calm', color: '#8A6552' }
 ];
 
 const storyPromptExamples = [
@@ -80,139 +79,102 @@ const StoryBuilder = () => {
   
   return (
     <DashboardLayout>
-      <div className="container-custom py-16">
-        {/* Animated background elements */}
-        <div className="absolute top-0 right-0 -z-10 w-full h-full overflow-hidden">
-          <motion.div 
-            animate={{ 
-              y: [0, -25, 0],
-              opacity: [0.08, 0.15, 0.08]
-            }} 
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-40 right-10 w-96 h-96 rounded-full bg-pixar-orange/20 blur-3xl"
-          />
-          <motion.div 
-            animate={{ 
-              y: [0, 25, 0],
-              opacity: [0.07, 0.12, 0.07]
-            }} 
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-20 left-10 w-[500px] h-[500px] rounded-full bg-pixar-blue/20 blur-3xl"
-          />
-        </div>
-        
+      <div className="container-custom py-10">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12"
+          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8"
         >
           <div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-block mb-3 px-4 py-2 rounded-full bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10"
-            >
-              <div className="flex items-center space-x-2">
-                <Sparkles className="h-5 w-5 text-pixar-purple" />
-                <span className="text-sm font-medium text-gray-700">Create Animations in Minutes</span>
-              </div>
-            </motion.div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight">Create Your Animation</h1>
-            <p className="text-lg text-muted-foreground max-w-xl">Craft your story and customize animation settings with our intuitive editor</p>
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 pixar-text-gradient">Create Your Animation</h1>
+            <p className="text-muted-foreground">Craft your story and customize animation settings</p>
           </div>
         </motion.div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
-          {/* Story Input Section - 3 columns */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Story Input Section */}
           <motion.div 
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
-            className="lg:col-span-3"
           >
-            <Card className="mb-6 overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
-              <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-4 pt-6">
-                <CardTitle className="flex items-center text-2xl">
-                  <VideoIcon className="mr-3 h-6 w-6 text-pixar-blue" />
+            <Card className="mb-6 overflow-hidden border-pixar-blue/10">
+              <CardHeader className="bg-gradient-to-r from-pixar-blue/5 to-transparent">
+                <CardTitle className="flex items-center">
+                  <VideoIcon className="mr-2 h-5 w-5 text-pixar-blue" />
                   Story Creation
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 pt-4">
+              <CardContent className="pt-6">
                 <Tabs defaultValue="generate" className="w-full">
-                  <TabsList className="grid grid-cols-2 w-full mb-8 p-1 bg-gray-100/80 rounded-xl">
-                    <TabsTrigger value="generate" className="data-[state=active]:bg-pixar-blue data-[state=active]:text-white rounded-lg py-3 transition-all">
+                  <TabsList className="grid grid-cols-2 w-full mb-6">
+                    <TabsTrigger value="generate" className="data-[state=active]:bg-pixar-blue data-[state=active]:text-white rounded-md">
                       <Sparkles className="mr-2 h-4 w-4" />
                       AI Prompt
                     </TabsTrigger>
-                    <TabsTrigger value="manual" className="data-[state=active]:bg-pixar-blue data-[state=active]:text-white rounded-lg py-3 transition-all">
+                    <TabsTrigger value="manual" className="data-[state=active]:bg-pixar-blue data-[state=active]:text-white rounded-md">
                       <Heart className="mr-2 h-4 w-4" />
                       Write Manually
                     </TabsTrigger>
                   </TabsList>
                   
-                  <TabsContent value="generate" className="space-y-6 mt-2">
-                    <div className="bg-gradient-to-br from-pixar-blue/5 to-pixar-purple/5 rounded-xl p-6 border border-pixar-blue/10 shadow-sm">
-                      <h3 className="font-semibold text-pixar-blue flex items-center mb-3 text-lg">
-                        <Sparkles className="h-5 w-5 mr-2" />
+                  <TabsContent value="generate" className="space-y-4 mt-2">
+                    <div className="bg-pixar-blue/5 rounded-lg p-4 border border-pixar-blue/10">
+                      <h3 className="font-medium text-pixar-blue flex items-center mb-2">
+                        <Sparkles className="h-4 w-4 mr-2" />
                         AI Story Prompt
                       </h3>
-                      <p className="text-muted-foreground mb-6">
-                        Enter a simple prompt about your story idea. Our AI will generate a full story from your prompt in the next step.
+                      <p className="text-sm text-muted-foreground mb-4">
+                        Enter a simple prompt about your story idea. You'll be able to generate the full story in the next step.
                       </p>
                       
-                      <div className="space-y-5">
+                      <div className="space-y-4">
                         <div>
-                          <Label htmlFor="story-prompt" className="text-sm font-medium mb-2 block">Your Story Idea</Label>
-                          <div>
+                          <Label htmlFor="story-prompt" className="text-sm font-medium">Your Story Idea</Label>
+                          <div className="mt-1.5">
                             <Input
                               id="story-prompt"
                               placeholder={storyPromptExamples[currentExample]}
                               value={promptInput}
                               onChange={(e) => setPromptInput(e.target.value)}
-                              className="border-pixar-blue/20 focus:border-pixar-blue transition-all duration-300 shadow-sm text-base"
                             />
                           </div>
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className="text-xs text-muted-foreground mt-1.5">
                             Example: "A shy robot learns to make friends"
                           </p>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="px-2">
-                      <div className="flex items-start p-4 rounded-xl bg-amber-50 border border-amber-100">
-                        <Zap className="h-6 w-6 text-pixar-orange mr-3 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-gray-700">
-                          In the next step, our AI will transform your prompt into a complete story that you can review and edit before animation.
-                        </p>
-                      </div>
+                    <div className="mt-4 px-1">
+                      <p className="text-sm text-muted-foreground">
+                        <span className="inline-block bg-pixar-blue/10 px-2 py-1 rounded text-pixar-blue mr-1">Tip:</span>
+                        In the next step, our AI will transform your prompt into a complete story that you can review and edit before animation.
+                      </p>
                     </div>
                   </TabsContent>
                   
                   <TabsContent value="manual" className="space-y-4 mt-2">
                     <div>
-                      <Label htmlFor="manual-story" className="flex items-center text-lg mb-2">
-                        <Heart className="mr-2 h-5 w-5 text-pixar-red" />
+                      <Label htmlFor="manual-story" className="flex items-center">
+                        <Heart className="mr-2 h-4 w-4 text-pixar-red" />
                         Your Story
                       </Label>
                       <Textarea 
                         id="manual-story" 
                         placeholder="Once upon a time..." 
-                        className="min-h-[300px] mt-1.5 border-pixar-blue/20 focus:border-pixar-blue shadow-sm text-base"
+                        className="min-h-[250px] mt-1.5"
                         value={storyInput}
                         onChange={(e) => setStoryInput(e.target.value)}
                       />
-                      <div className="flex justify-between items-center mt-3">
+                      <div className="flex justify-between items-center mt-2">
                         <p className="text-sm text-muted-foreground">
                           Write your story in as much detail as possible for the best animation results.
                         </p>
-                        <div className="px-3 py-1 bg-pixar-blue/10 rounded-full">
-                          <p className="text-xs text-pixar-blue font-medium">
-                            {storyInput.length} characters
-                          </p>
-                        </div>
+                        <p className="text-xs text-pixar-blue">
+                          {storyInput.length} characters
+                        </p>
                       </div>
                     </div>
                   </TabsContent>
@@ -221,22 +183,21 @@ const StoryBuilder = () => {
             </Card>
           </motion.div>
           
-          {/* Settings Panel - 2 columns */}
+          {/* Settings Panel */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.1 }}
-            className="lg:col-span-2"
           >
-            <Card className="bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10 mb-6">
-              <CardHeader className="pb-2 pt-6">
-                <CardTitle className="text-xl">Basic Settings</CardTitle>
+            <Card>
+              <CardHeader>
+                <CardTitle>Basic Settings</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-7 p-6">
+              <CardContent className="space-y-6">
                 {/* Emotion Selection */}
                 <div>
-                  <Label className="block mb-3 flex items-center font-medium">
-                    <Heart className="mr-2 h-4 w-4 text-pixar-red" />
+                  <Label className="block mb-2 flex items-center">
+                    <Heart className="mr-2 h-4 w-4 text-pixar-blue" />
                     Primary Emotion
                   </Label>
                   <div className="flex flex-wrap gap-2">
@@ -245,19 +206,18 @@ const StoryBuilder = () => {
                         key={emotion.name}
                         type="button"
                         onClick={() => setSelectedEmotion(emotion.name)}
-                        className={`px-3 py-2 rounded-full text-sm transition-all ${
+                        className={`px-3 py-1.5 rounded-full text-sm transition-all ${
                           selectedEmotion === emotion.name
-                            ? 'bg-gradient-to-r from-gray-800 to-gray-900 text-white font-medium shadow-md transform scale-105'
+                            ? 'bg-gray-900 text-white font-medium'
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                       >
                         <div className="flex items-center gap-1.5">
                           <div 
-                            className="w-3 h-3 rounded-full" 
+                            className="w-2 h-2 rounded-full" 
                             style={{ backgroundColor: emotion.color }}
                           />
-                          <span>{emotion.name}</span>
-                          <span className="ml-1 opacity-70">{emotion.icon}</span>
+                          {emotion.name}
                         </div>
                       </button>
                     ))}
@@ -265,10 +225,10 @@ const StoryBuilder = () => {
                 </div>
                 
                 {/* Hook Option */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-pixar-blue/5 to-transparent border border-pixar-blue/10">
+                <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
-                    <Label className="text-base flex items-center font-medium">
-                      <Anchor className="mr-2 h-4 w-4 text-pixar-blue" />
+                    <Label className="text-base flex items-center">
+                      <Anchor className="mr-2 h-4 w-4 text-muted-foreground" />
                       Add Attention Hook
                     </Label>
                     <p className="text-sm text-muted-foreground">
@@ -279,18 +239,17 @@ const StoryBuilder = () => {
                     checked={addHook}
                     onCheckedChange={setAddHook}
                     aria-label="Add hook to video"
-                    className="data-[state=checked]:bg-pixar-blue"
                   />
                 </div>
                 
                 {/* Language Selection */}
                 <div>
-                  <Label htmlFor="language" className="flex items-center font-medium mb-2">
+                  <Label htmlFor="language" className="flex items-center">
                     <Languages className="mr-2 h-4 w-4 text-muted-foreground" />
                     Language
                   </Label>
                   <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger className="bg-white border-pixar-blue/20">
+                    <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
@@ -306,12 +265,12 @@ const StoryBuilder = () => {
                 
                 {/* Voice Style */}
                 <div>
-                  <Label htmlFor="voice" className="flex items-center font-medium mb-2">
+                  <Label htmlFor="voice" className="flex items-center">
                     <Mic className="mr-2 h-4 w-4 text-muted-foreground" />
                     Voice Style
                   </Label>
                   <Select value={voiceStyle} onValueChange={setVoiceStyle}>
-                    <SelectTrigger className="bg-white border-pixar-blue/20">
+                    <SelectTrigger className="mt-1.5">
                       <SelectValue placeholder="Select voice style" />
                     </SelectTrigger>
                     <SelectContent>
@@ -325,24 +284,24 @@ const StoryBuilder = () => {
                 </div>
                 
                 {/* Duration Slider */}
-                <div className="p-4 rounded-xl bg-gradient-to-r from-pixar-orange/5 to-transparent border border-pixar-orange/10">
-                  <Label className="flex items-center font-medium mb-3">
-                    <Clock className="mr-2 h-4 w-4 text-pixar-orange" />
+                <div>
+                  <Label className="flex items-center">
+                    <Clock className="mr-2 h-4 w-4 text-muted-foreground" />
                     Duration: {duration} seconds
                   </Label>
-                  <div className="pt-1">
-                    <RadioGroup value={duration} onValueChange={setDuration} className="flex space-x-6">
+                  <div className="pt-2">
+                    <RadioGroup value={duration} onValueChange={setDuration} className="flex space-x-4">
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="30" id="duration-30" className="text-pixar-orange" />
-                        <Label htmlFor="duration-30" className="font-medium">30s</Label>
+                        <RadioGroupItem value="30" id="duration-30" />
+                        <Label htmlFor="duration-30">30s</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="60" id="duration-60" className="text-pixar-orange" />
-                        <Label htmlFor="duration-60" className="font-medium">1m</Label>
+                        <RadioGroupItem value="60" id="duration-60" />
+                        <Label htmlFor="duration-60">1m</Label>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="120" id="duration-120" className="text-pixar-orange" />
-                        <Label htmlFor="duration-120" className="font-medium">2m</Label>
+                        <RadioGroupItem value="120" id="duration-120" />
+                        <Label htmlFor="duration-120">2m</Label>
                       </div>
                     </RadioGroup>
                   </div>
@@ -351,16 +310,16 @@ const StoryBuilder = () => {
             </Card>
             
             {/* Summary Card */}
-            <Card className="mb-6 bg-gradient-to-br from-white/90 to-white/50 backdrop-blur-xl shadow-xl rounded-2xl border-pixar-blue/20">
-              <CardHeader className="pb-2 pt-6">
-                <CardTitle className="text-xl flex items-center">
-                  <ArrowRight className="mr-2 h-5 w-5 text-pixar-blue" />
+            <Card className="mt-6 border-pixar-blue/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg flex items-center">
+                  <ArrowRight className="mr-2 h-4 w-4 text-pixar-blue" />
                   Summary
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3 text-sm">
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                     <div className="text-muted-foreground">Story Type:</div>
                     <div className="font-medium">
                       {promptInput ? 'AI-Assisted' : storyInput ? 'Manual' : 'Not started'}
@@ -377,17 +336,7 @@ const StoryBuilder = () => {
                     
                     <div className="text-muted-foreground">Primary Emotion:</div>
                     <div className="font-medium">
-                      {selectedEmotion ? (
-                        <span className="flex items-center">
-                          <span 
-                            className="w-2 h-2 rounded-full mr-1.5" 
-                            style={{ 
-                              backgroundColor: emotions.find(e => e.name === selectedEmotion)?.color 
-                            }}
-                          />
-                          {selectedEmotion}
-                        </span>
-                      ) : 'Not selected'}
+                      {selectedEmotion ? selectedEmotion : 'Not selected'}
                     </div>
                     
                     <div className="text-muted-foreground">Language:</div>
@@ -403,9 +352,9 @@ const StoryBuilder = () => {
                     <div className="font-medium">{addHook ? 'Yes' : 'No'}</div>
                   </div>
                   
-                  <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 rounded-xl mt-5 border border-blue-200/50">
-                    <div className="text-pixar-blue font-medium mb-1 text-xs">Next Step Preview:</div>
-                    <div className="text-sm text-gray-700">
+                  <div className="bg-gray-50 p-3 rounded-md mt-4 border border-gray-200">
+                    <div className="text-muted-foreground mb-1 text-xs">Next Step Preview:</div>
+                    <div className="text-xs">
                       {promptInput 
                         ? `Your prompt "${promptInput.substring(0, 40)}${promptInput.length > 40 ? '...' : ''}" will be used to generate a full story.`
                         : storyInput
@@ -426,13 +375,13 @@ const StoryBuilder = () => {
               <Button 
                 onClick={handleContinue} 
                 disabled={!promptInput && !storyInput} 
-                className="w-full bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple pixar-button rounded-xl py-6 text-lg font-medium shadow-lg hover:shadow-xl"
+                className="w-full bg-pixar-blue text-white hover:bg-pixar-darkblue pixar-button"
               >
                 Continue to Story Refinement
-                <ArrowRight className="ml-2 h-5 w-5" />
+                <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
               {!promptInput && !storyInput && (
-                <p className="text-center text-red-500 text-xs mt-3">
+                <p className="text-center text-red-500 text-xs mt-2">
                   Please enter a story prompt or write a story manually to continue
                 </p>
               )}
