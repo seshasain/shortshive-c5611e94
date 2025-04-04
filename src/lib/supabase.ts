@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 // Get Supabase environment variables
@@ -177,14 +176,19 @@ export const signOut = async () => {
 
 // Profile helpers
 export const getProfile = async (userId: string) => {
-  // Fix: Add proper promise handling
-  const response = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  
-  return response;
+  try {
+    // Fix: Ensure we're properly chaining methods in the correct order
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    
+    return { data, error };
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    return { data: null, error };
+  }
 };
 
 export const updateProfile = async (userId: string, updates: any) => {
