@@ -29,9 +29,15 @@ function createMockSupabaseClient() {
       select: () => ({
         eq: (column: string, value: any) => ({
           single: async () => ({ data: mockData[table], error: null }),
-          order: () => ({ data: mockData[table], error: null }),
+          order: () => ({
+            data: mockData[table],
+            error: null
+          }),
         }),
-        order: () => ({ data: mockData[table], error: null }),
+        order: () => ({
+          data: Array.isArray(mockData[table]) ? mockData[table] : [mockData[table]],
+          error: null
+        }),
       }),
       insert: async () => ({ data: {}, error: null }),
       update: async () => ({ data: {}, error: null }),
