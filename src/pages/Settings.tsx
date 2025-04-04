@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Card } from "@/components/ui/card";
 import { User, Bell, Shield, ChevronRight, Mail, Key, Smartphone, Globe } from 'lucide-react';
 import ProfileCard from '@/components/profile/ProfileCard';
-import { supabase } from '@/lib/supabase';
+import { supabase } from '@/lib/auth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 const Settings = () => {

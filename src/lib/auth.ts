@@ -50,7 +50,7 @@ export const isApprovedDomain = (email: string): boolean => {
 };
 
 // Sign up function using Supabase Auth
-export const signUp = async (email: string, password: string, fullName: string) => {
+export const signUp = async (email: string, password: string, fullName: string, phoneNumber?: string, country?: string) => {
   try {
     // Check if the email domain is approved
     if (!isApprovedDomain(email)) {
@@ -66,34 +66,24 @@ export const signUp = async (email: string, password: string, fullName: string) 
       password,
       options: {
         data: {
-          full_name: fullName
-        }
+          full_name: fullName,
+          phone_number: phoneNumber,
+          country: country
+        },
+        emailRedirectTo: `${window.location.origin}/login?confirmed=true`
       }
     });
 
     if (error) throw error;
 
-    // Create profile after successful signup
-    if (data.user) {
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: data.user.id,
-            email,
-            full_name: fullName,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          }
-        ]);
-
-      if (profileError) {
-        console.error('Error creating profile:', profileError);
-        // Don't throw here - the user is still created
-      }
-    }
-
-    return { data, error: null };
+    // Return success with verification pending status
+    return { 
+      data: { 
+        ...data,
+        verificationPending: true 
+      }, 
+      error: null 
+    };
   } catch (error) {
     console.error('Error during signup:', error);
     return { data: null, error };
@@ -119,5 +109,38 @@ export const signIn = async (email: string, password: string) => {
 // Sign out function
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
+  return { error };
+};
+
+// Get current session
+export const getSession = async () => {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  return { session, error };
+};
+
+// Get current user's profile
+export const getProfile = async () => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return { data: null, error: new Error('No user session found') };
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', session.user.id)
+    .single();
+
+  return { data, error };
+};
+
+// Update user's profile
+export const updateProfile = async (profile: { full_name?: string }) => {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.user) return { error: new Error('No user session found') };
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(profile)
+    .eq('id', session.user.id);
+
   return { error };
 };

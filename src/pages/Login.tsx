@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Film, Loader2, Mail, CheckCircle2, AlertTriangle } from 'lucide-react';
-import { signIn } from '@/lib/supabase';
+import { signIn } from '@/lib/auth';
 
 const Login = () => {
   const navigate = useNavigate();
