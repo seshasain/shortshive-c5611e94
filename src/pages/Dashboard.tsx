@@ -153,15 +153,7 @@ const Dashboard = () => {
               className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
             >
               {projects.slice(0, 2).map((project, index) => (
-                <ProjectCard 
-                  key={project.id} 
-                  title={project.title}
-                  description=""
-                  image={project.thumbnail}
-                  status={project.status}
-                  date={project.date}
-                  id={project.id}
-                />
+                <ProjectCard key={project.id} project={project} delay={index * 0.1} />
               ))}
             </motion.div>
           </div>

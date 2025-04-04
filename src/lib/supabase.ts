@@ -1,43 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Try to get environment variables
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-// Create a mock client or a real client depending on whether env vars are available
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : createMockSupabaseClient();
-
-// Create a mock Supabase client that doesn't throw errors
-function createMockSupabaseClient() {
-  console.warn(
-    'Running with mock Supabase client. Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables for real functionality.'
-  );
-  
-  // Basic mock implementation that returns empty data
-  return {
-    auth: {
-      signUp: () => Promise.resolve({ data: null, error: new Error('Mock Supabase client') }),
-      signInWithPassword: () => Promise.resolve({ data: null, error: new Error('Mock Supabase client') }),
-      signOut: () => Promise.resolve({ error: null }),
-      getUser: () => Promise.resolve({ data: { user: null }, error: null })
-    },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          single: () => Promise.resolve({ data: null, error: null }),
-          order: () => Promise.resolve({ data: [], error: null })
-        }),
-        order: () => Promise.resolve({ data: [], error: null })
-      }),
-      insert: () => Promise.resolve({ data: null, error: null }),
-      update: () => ({
-        eq: () => Promise.resolve({ data: null, error: null })
-      })
-    })
-  };
+if (!supabaseUrl || !supabaseAnonKey) {
+  throw new Error('Missing Supabase environment variables');
 }
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // List of approved domains for registration
 const APPROVED_DOMAINS = [
