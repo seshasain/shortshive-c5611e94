@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -14,6 +15,10 @@ import Dashboard from "./pages/Dashboard";
 import StoryBuilder from "./pages/StoryBuilder";
 import StoryReview from "./pages/StoryReview";
 import AnimationProgress from "./pages/AnimationProgress";
+import MyAnimations from "./pages/MyAnimations";
+import Stories from "./pages/Stories";
+import Settings from "./pages/Settings";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -34,6 +39,10 @@ const App = () => (
           <Route path="/build-story" element={<StoryBuilder />} />
           <Route path="/review-story" element={<StoryReview />} />
           <Route path="/generating" element={<AnimationProgress />} />
+          <Route path="/my-animations" element={<MyAnimations />} />
+          <Route path="/stories" element={<Stories />} />
+          <Route path="/settings" element={<Settings />} />
+          <Route path="/profile" element={<Profile />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

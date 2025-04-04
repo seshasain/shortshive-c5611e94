@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Home, Video, FileText, Settings, LogOut, HelpCircle, 
-  Menu, X, ChevronRight, Bell, Film, User, CreditCard
+  Menu, X, Bell, Film, User, CreditCard
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -122,17 +123,23 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
               <DropdownMenuContent className="w-56" align="end">
                 <DropdownMenuLabel>My Account</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
+                <DropdownMenuItem asChild>
+                  <Link to="/profile" className="flex items-center cursor-pointer">
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings" className="flex items-center cursor-pointer">
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </Link>
                 </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
+                <DropdownMenuItem asChild>
+                  <Link to="/settings?tab=billing" className="flex items-center cursor-pointer">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Billing</span>
+                  </Link>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem className="text-red-500">
