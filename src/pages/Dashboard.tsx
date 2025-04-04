@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -154,17 +153,7 @@ const Dashboard = () => {
               className="col-span-1 md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
             >
               {projects.slice(0, 2).map((project, index) => (
-                <ProjectCard 
-                  key={project.id}
-                  id={project.id}
-                  title={project.title}
-                  status={project.status}
-                  thumbnail={project.thumbnail}
-                  createdAt={project.date}
-                  type="animation"
-                  delay={index * 0.1}
-                  project={project}
-                />
+                <ProjectCard key={project.id} project={project} delay={index * 0.1} />
               ))}
             </motion.div>
           </div>

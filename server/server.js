@@ -1,41 +1,23 @@
-
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
 
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
-const prisma = new PrismaClient();
 
 app.use(cors());
 app.use(express.json());
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
+
 // Add request logging middleware
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
 });
-
-// Database initialization and migration check
-async function initializeDatabase() {
-    try {
-        // Simple test query to check database connection
-        await prisma.$queryRaw`SELECT 1`;
-        console.log('Database connection established successfully');
-        
-        // You could add more initialization logic here if needed
-        // For example, checking if required tables exist
-        
-    } catch (error) {
-        console.error('Database initialization error:', error);
-        console.log('Make sure to run migrations with: npm run db:migrate');
-    }
-}
 
 // Story Refinement endpoint
 app.post('/api/refine-story', async (req, res) => {
@@ -187,18 +169,12 @@ Return ONLY the JSON without any additional text or explanation.`;
     }
 });
 
-// Initialize database and start server
-initializeDatabase().then(() => {
-    app.listen(port)
-        .on('listening', () => console.log(`Server is running on port ${port}`))
-        .on('error', error => {
-            if (error.code === 'EADDRINUSE') {
-                console.error(`Port ${port} is already in use`);
-                process.exit(1);
-            }
-            console.error('Server error:', error);
-        });
-}).catch(err => {
-    console.error('Failed to initialize database:', err);
-    process.exit(1);
-});
+app.listen(port)
+    .on('listening', () => console.log(`Server is running on port ${port}`))
+    .on('error', error => {
+        if (error.code === 'EADDRINUSE') {
+            console.error(`Port ${port} is already in use`);
+            process.exit(1);
+        }
+        console.error('Server error:', error);
+    }); 

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -10,7 +9,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Film, Loader2, Check, X } from 'lucide-react';
 import { signUp, createProfile, isApprovedDomain } from '@/lib/supabase';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "@/components/ui/use-toast";
 
 // List of countries for the dropdown
 const countries = [
@@ -39,6 +37,9 @@ const SignUp = () => {
     
     // Clear previous errors
     setEmailError('');
+    
+    // Don't validate while user is still likely typing
+    // Only validate when the email appears to be complete
   };
 
   // Validate email when user leaves the field (blur event)
@@ -119,50 +120,26 @@ const SignUp = () => {
       
       if (signUpError) throw signUpError;
 
-      console.log('Sign up successful:', authData);
-
       // Create profile with additional information
       if (authData && authData.user) {
-        console.log('Creating profile for user ID:', authData.user.id);
-        
-        const profileData = {
+        const { error: profileError } = await createProfile(authData.user.id, {
           name: name.trim(),
           phone_number: phoneNumber.trim() || null,
           country: country,
-          profession: null // Optional field
-        };
-
-        console.log('Profile data to be saved:', profileData);
-        
-        const { error: profileError } = await createProfile(authData.user.id, profileData);
+          profession: null // Set profession to null since we removed the field
+        });
 
         if (profileError) {
           console.error("Error creating profile:", profileError);
-          toast({
-            title: "Profile Creation Issue",
-            description: "Your account was created but we couldn't save your profile information. You can update it later in settings.",
-            variant: "destructive"
-          });
-        } else {
-          console.log("Profile created successfully");
+          // Continue with signup success even if profile creation fails
+          // We could handle this more gracefully in a production app
         }
       }
 
       // Redirect to login page with success message
-      toast({
-        title: "Account created!",
-        description: "Please check your email for verification and sign in.",
-      });
-      
       navigate('/login?signup=success');
     } catch (err: any) {
-      console.error("Sign up error:", err);
       setError(err.message || 'An error occurred during sign up');
-      toast({
-        title: "Sign Up Failed",
-        description: err.message || 'An error occurred during sign up',
-        variant: "destructive"
-      });
     } finally {
       setIsLoading(false);
     }
