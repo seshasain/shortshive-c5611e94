@@ -212,7 +212,7 @@ const StoryBuilder = React.memo(() => {
                         AI Story Prompt
                       </h3>
                       <p className="text-muted-foreground mb-6">
-                        Enter a simple prompt about your story idea. Our AI will generate a full story from your prompt in the next step.
+                        Enter a simple prompt about your story idea.
                       </p>
                       
                       <div className="space-y-5">
@@ -221,7 +221,7 @@ const StoryBuilder = React.memo(() => {
                           <div>
                             <Input
                               id="story-prompt"
-                              placeholder={storyPromptExamples[currentExample]}
+                              
                               value={promptInput}
                               onChange={(e) => setPromptInput(e.target.value)}
                               className="border-pixar-blue/20 focus:border-pixar-blue transition-all duration-300 shadow-sm text-base"

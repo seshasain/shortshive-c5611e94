@@ -35,7 +35,7 @@ app.post('/api/refine-story', async (req, res) => {
         console.log('Initializing OpenRouter call with settings:', settings, "wordCount ", wordCount);
         
         // Calculate appropriate number of scenes based on duration
-        const recommendedSceneCount = Math.max(5, Math.ceil(settings.duration / 10));
+        const recommendedSceneCount = Math.max(3, Math.ceil(settings.duration / 15));
         // Calculate story complexity level based on duration
         const storyComplexity = settings.duration <= 30 ? "simple" : 
                                settings.duration <= 60 ? "moderate" : 
@@ -57,7 +57,7 @@ IMPORTANT DURATION GUIDELINES:
    - More complex plot with multiple developments or challenges
    - More detailed settings and environments
    - More emotional range and depth
-4. Each scene should be roughly 10-15 seconds in duration, Each activity should be a  scene, dont try to fit two activities in one scene./4. Each scene should be approximately 10-15 seconds in duration. Create separate scenes for distinct activities — never combine multiple activities into a single scene.
+4. Each scene should be roughly 10-15 seconds in duration, Each activity should be a  scene, dont try to fit two activities in one scene.
 
 The story should include well-structured scenes, each reflecting the core theme and emotion of the narrative. The scenes must be cinematic, visually rich, and emotionally resonant, providing both visual storytelling and engaging dialogue/narration that would fit in a short video format.
 

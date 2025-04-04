@@ -401,16 +401,6 @@ const StoryReview = () => {
                       className="min-h-[450px] border-pixar-blue/20 focus:border-pixar-blue focus-visible:ring-pixar-blue/40 text-gray-700 text-base shadow-sm"
                     />
                   </CardContent>
-                  <CardFooter className="flex justify-end space-x-3 border-t pt-5 bg-gray-50">
-                    <Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-100 transition-colors">
-                      <Wand2 className="mr-2 h-4 w-4 text-pixar-purple" />
-                      Improve Text
-                    </Button>
-                    <Button size="sm" className="bg-pixar-blue text-white hover:bg-pixar-darkblue shadow-md">
-                      <Check className="mr-2 h-4 w-4" />
-                      Save
-                    </Button>
-                  </CardFooter>
                 </Card>
               </motion.div>
               
