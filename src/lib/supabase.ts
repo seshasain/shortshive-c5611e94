@@ -177,7 +177,7 @@ export const signOut = async () => {
 // Profile helpers
 export const getProfile = async (userId: string) => {
   try {
-    // Fix: Ensure we're properly chaining methods in the correct order
+    // Fix the query structure to ensure proper chaining
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
