@@ -1,0 +1,60 @@
+
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Profile {
+  id           String    @id @db.Uuid
+  username     String?   @unique
+  full_name    String?
+  name         String?
+  phone_number String?
+  country      String?
+  profession   String?
+  avatar_url   String?
+  created_at   DateTime  @default(now()) @db.Timestamptz()
+  updated_at   DateTime  @default(now()) @db.Timestamptz()
+  
+  animations Animation[]
+  stories    Story[]
+
+  @@map("profiles")
+}
+
+model Animation {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  title        String
+  description  String?
+  status       String    @default("draft")
+  duration     Int?
+  thumbnail_url String?
+  created_at   DateTime  @default(now()) @db.Timestamptz()
+  updated_at   DateTime  @default(now()) @db.Timestamptz()
+  
+  profile      Profile   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("animations")
+}
+
+model Story {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id      String    @db.Uuid
+  title        String
+  content      String?
+  settings     Json      @default("{}")
+  created_at   DateTime  @default(now()) @db.Timestamptz()
+  updated_at   DateTime  @default(now()) @db.Timestamptz()
+  
+  profile      Profile   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@map("stories")
+}
