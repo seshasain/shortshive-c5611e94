@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { useQuery } from '@tanstack/react-query';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -9,6 +10,42 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 // Initialize Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+// Profile type
+export interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone_number?: string;
+  country?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+// Hook to fetch and cache profile data
+export const useProfile = () => {
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('No session found');
+      }
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) throw error;
+      return data as Profile;
+    },
+    staleTime: 1000 * 60 * 5, // Consider data fresh for 5 minutes
+    gcTime: 1000 * 60 * 30, // Keep data in cache for 30 minutes
+  });
+};
 
 // List of approved domains for registration
 const APPROVED_DOMAINS = [

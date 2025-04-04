@@ -16,6 +16,8 @@ import StoryBuilder from "./pages/StoryBuilder";
 import StoryReview from "./pages/StoryReview";
 import AnimationProgress from "./pages/AnimationProgress";
 import Settings from "./pages/Settings";
+import SavedStories from "./pages/SavedStories";
+import MyAnimations from "./pages/MyAnimations";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ const App = () => (
           
           {/* Protected Routes */}
           <Route path="/dashboard" element={<AuthGuard requireAuth={true}><Dashboard /></AuthGuard>} />
+          <Route path="/saved-stories" element={<AuthGuard requireAuth={true}><SavedStories /></AuthGuard>} />
+          <Route path="/my-animations" element={<AuthGuard requireAuth={true}><MyAnimations /></AuthGuard>} />
           <Route path="/build-story" element={<AuthGuard requireAuth={true}><StoryBuilder /></AuthGuard>} />
           <Route path="/review-story" element={<AuthGuard requireAuth={true}><StoryReview /></AuthGuard>} />
           <Route path="/generating" element={<AuthGuard requireAuth={true}><AnimationProgress /></AuthGuard>} />

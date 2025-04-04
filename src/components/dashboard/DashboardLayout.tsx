@@ -10,7 +10,8 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-  import { supabase } from '@/lib/auth';
+import { supabase, useProfile } from '@/lib/auth';
+import { toast } from 'sonner';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -19,39 +20,23 @@ interface DashboardLayoutProps {
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  const { data: profile, isLoading } = useProfile();
   
-  useEffect(() => {
-    fetchProfile();
-  }, []);
-
-  const fetchProfile = async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', session.user.id)
-        .single();
-
-      if (error) throw error;
-      setProfile(data);
-    } catch (error) {
-      console.error('Error fetching profile:', error);
-    }
-  };
-
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/login');
+    try {
+      await supabase.auth.signOut();
+      navigate('/login');
+      toast.success('Signed out successfully');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
+    }
   };
   
   const navItems = [
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
     { label: 'My Animations', icon: Video, href: '/my-animations' },
-    { label: 'Stories', icon: FileText, href: '/stories' },
+    { label: 'Saved Stories', icon: FileText, href: '/saved-stories' },
     { label: 'Settings', icon: Settings, href: '/settings' },
   ];
   
@@ -95,7 +80,11 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   })}
                 </nav>
                 <div className="mt-auto p-4 border-t">
-                  <Button variant="ghost" className="w-full justify-start text-red-500 hover:bg-red-50 hover:text-red-600">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full justify-start text-red-500 hover:bg-red-50 hover:text-red-600"
+                    onClick={handleSignOut}
+                  >
                     <LogOut className="mr-2 h-5 w-5" />
                     Logout
                   </Button>
@@ -154,12 +143,16 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   variant="ghost" 
                   className="relative h-10 w-10 rounded-full ring-2 ring-transparent hover:ring-pixar-blue/20 transition-all duration-300"
                 >
-                  <Avatar className="h-9 w-9">
-                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-r from-pixar-blue to-pixar-teal text-white">
-                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
+                  {isLoading ? (
+                    <div className="h-9 w-9 rounded-full bg-gray-200 animate-pulse" />
+                  ) : (
+                    <Avatar className="h-9 w-9">
+                      <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} className="object-cover" />
+                      <AvatarFallback className="bg-gradient-to-r from-pixar-blue to-pixar-teal text-white">
+                        {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                  )}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent 
@@ -167,16 +160,28 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                 align="end"
               >
                 <div className="flex items-center space-x-3 p-2 mb-2">
-                  <Avatar className="h-10 w-10 ring-2 ring-pixar-blue/20">
-                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} className="object-cover" />
-                    <AvatarFallback className="bg-gradient-to-r from-pixar-blue to-pixar-teal text-white">
-                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-gray-900">{profile?.full_name}</span>
-                    <span className="text-sm text-gray-500">{profile?.email}</span>
-                  </div>
+                  {isLoading ? (
+                    <div className="flex items-center space-x-3">
+                      <div className="h-10 w-10 rounded-full bg-gray-200 animate-pulse" />
+                      <div className="space-y-2">
+                        <div className="h-4 w-24 bg-gray-200 rounded animate-pulse" />
+                        <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <Avatar className="h-10 w-10 ring-2 ring-pixar-blue/20">
+                        <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} className="object-cover" />
+                        <AvatarFallback className="bg-gradient-to-r from-pixar-blue to-pixar-teal text-white">
+                          {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex flex-col">
+                        <span className="font-semibold text-gray-900">{profile?.full_name}</span>
+                        <span className="text-sm text-gray-500">{profile?.email}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <DropdownMenuSeparator className="bg-pixar-blue/10" />
                 <div className="p-1">

@@ -5,17 +5,18 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Pencil, Save, X, Camera, Phone, Mail, MapPin, Calendar } from 'lucide-react';
+import { Pencil, Save, X, Camera, Phone, Mail, MapPin, User } from 'lucide-react';
 import { supabase } from '@/lib/auth';
 
 interface ProfileData {
   id: string;
-  full_name: string;
   email: string;
-  avatar_url?: string;
+  full_name: string;
   phone_number?: string;
   country?: string;
-  date_of_birth?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
 interface ProfileCardProps {
@@ -27,20 +28,37 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<ProfileData>>(profile);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+    setError(null); // Clear any previous errors
+  };
+
+  const validatePhoneNumber = (phone: string) => {
+    if (!phone) return true; // Optional field
+    const phoneRegex = /^[+]?[\d\s-()]{8,}$/;
+    return phoneRegex.test(phone);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
+    
+    // Validate phone number if provided
+    if (formData.phone_number && !validatePhoneNumber(formData.phone_number)) {
+      setError('Please enter a valid phone number');
+      return;
+    }
+
     setIsLoading(true);
     try {
       await onUpdate(formData);
       setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
+      setError('Failed to update profile. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -51,10 +69,23 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
       const file = e.target.files?.[0];
       if (!file) return;
 
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        setError('Please upload an image file');
+        return;
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('Image size should be less than 5MB');
+        return;
+      }
+
       const fileExt = file.name.split('.').pop();
       const fileName = `${profile.id}-${Math.random()}.${fileExt}`;
       const filePath = `avatars/${fileName}`;
 
+      setIsLoading(true);
       // Upload the file to Supabase storage
       const { error: uploadError } = await supabase.storage
         .from('avatars')
@@ -69,8 +100,12 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
 
       // Update the profile with the new avatar URL
       await onUpdate({ avatar_url: publicUrl });
+      setError(null);
     } catch (error) {
       console.error('Error uploading avatar:', error);
+      setError('Failed to upload avatar. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -106,11 +141,21 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
             </div>
           </div>
 
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="p-3 rounded-lg bg-red-50 text-red-600 text-sm"
+            >
+              {error}
+            </motion.div>
+          )}
+
           {/* Profile Fields */}
           <div className="grid gap-6">
             <div className="flex flex-col space-y-2">
               <Label htmlFor="full_name" className="flex items-center gap-2 text-gray-600">
-                <span className="h-4 w-4 text-pixar-blue" />
+                <User className="h-4 w-4 text-pixar-blue" />
                 Full Name
               </Label>
               <Input
@@ -120,6 +165,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 className="border-pixar-blue/20 focus:border-pixar-blue"
+                required
               />
             </div>
 
@@ -140,7 +186,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
             <div className="flex flex-col space-y-2">
               <Label htmlFor="phone_number" className="flex items-center gap-2 text-gray-600">
                 <Phone className="h-4 w-4 text-pixar-blue" />
-                Phone Number
+                Phone Number (Optional)
               </Label>
               <Input
                 id="phone_number"
@@ -148,6 +194,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 value={formData.phone_number || ''}
                 onChange={handleInputChange}
                 disabled={!isEditing}
+                placeholder="+1 (555) 123-4567"
                 className="border-pixar-blue/20 focus:border-pixar-blue"
               />
             </div>
@@ -155,7 +202,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
             <div className="flex flex-col space-y-2">
               <Label htmlFor="country" className="flex items-center gap-2 text-gray-600">
                 <MapPin className="h-4 w-4 text-pixar-blue" />
-                Country
+                Country (Optional)
               </Label>
               <Input
                 id="country"
@@ -163,22 +210,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 value={formData.country || ''}
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                className="border-pixar-blue/20 focus:border-pixar-blue"
-              />
-            </div>
-
-            <div className="flex flex-col space-y-2">
-              <Label htmlFor="date_of_birth" className="flex items-center gap-2 text-gray-600">
-                <Calendar className="h-4 w-4 text-pixar-blue" />
-                Date of Birth
-              </Label>
-              <Input
-                id="date_of_birth"
-                name="date_of_birth"
-                type="date"
-                value={formData.date_of_birth || ''}
-                onChange={handleInputChange}
-                disabled={!isEditing}
+                placeholder="United States"
                 className="border-pixar-blue/20 focus:border-pixar-blue"
               />
             </div>
@@ -194,7 +226,9 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                   onClick={() => {
                     setFormData(profile);
                     setIsEditing(false);
+                    setError(null);
                   }}
+                  disabled={isLoading}
                   className="border-pixar-blue/20 hover:bg-pixar-blue/5"
                 >
                   <X className="h-4 w-4 mr-2" />

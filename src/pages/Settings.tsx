@@ -5,9 +5,21 @@ import { User, Bell, Shield, ChevronRight, Mail, Key, Smartphone, Globe } from '
 import ProfileCard from '@/components/profile/ProfileCard';
 import { supabase } from '@/lib/auth';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
+import { toast } from 'sonner';
+
+interface Profile {
+  id: string;
+  email: string;
+  full_name: string;
+  phone_number?: string;
+  country?: string;
+  avatar_url?: string;
+  created_at?: string;
+  updated_at?: string;
+}
 
 const Settings = () => {
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('profile');
 
@@ -18,7 +30,9 @@ const Settings = () => {
   const fetchProfile = async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
+      if (!session?.user) {
+        throw new Error('No session found');
+      }
 
       const { data, error } = await supabase
         .from('profiles')
@@ -30,12 +44,13 @@ const Settings = () => {
       setProfile(data);
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile data');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleProfileUpdate = async (updatedProfile) => {
+  const handleProfileUpdate = async (updatedProfile: Partial<Profile>) => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session?.user) throw new Error('No session found');
@@ -48,8 +63,10 @@ const Settings = () => {
       if (error) throw error;
 
       await fetchProfile();
+      toast.success('Profile updated successfully');
     } catch (error) {
       console.error('Error updating profile:', error);
+      toast.error('Failed to update profile');
       throw error;
     }
   };
@@ -121,20 +138,24 @@ const Settings = () => {
               <div className="p-6">
                 {activeTab === 'profile' && (
                   loading ? (
-                    <div className="animate-pulse space-y-4">
-                      <div className="h-24 w-24 bg-gray-200 rounded-full mx-auto" />
-                      <div className="h-8 bg-gray-200 rounded w-1/3 mx-auto" />
-                      <div className="space-y-3">
-                        <div className="h-4 bg-gray-200 rounded w-full" />
-                        <div className="h-4 bg-gray-200 rounded w-5/6" />
-                        <div className="h-4 bg-gray-200 rounded w-4/6" />
+                    <div className="animate-pulse space-y-6">
+                      <div className="flex justify-center">
+                        <div className="h-24 w-24 bg-gray-200 rounded-full" />
+                      </div>
+                      <div className="space-y-4">
+                        <div className="h-4 w-1/4 bg-gray-200 rounded" />
+                        <div className="h-10 bg-gray-200 rounded" />
+                        <div className="h-4 w-1/4 bg-gray-200 rounded" />
+                        <div className="h-10 bg-gray-200 rounded" />
+                        <div className="h-4 w-1/4 bg-gray-200 rounded" />
+                        <div className="h-10 bg-gray-200 rounded" />
                       </div>
                     </div>
                   ) : profile ? (
                     <ProfileCard profile={profile} onUpdate={handleProfileUpdate} />
                   ) : (
-                    <div className="text-center text-gray-500">
-                      <p>Failed to load profile. Please try again later.</p>
+                    <div className="text-center text-gray-500 py-8">
+                      <p>Failed to load profile. Please try refreshing the page.</p>
                     </div>
                   )
                 )}
