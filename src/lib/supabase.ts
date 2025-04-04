@@ -177,12 +177,14 @@ export const signOut = async () => {
 
 // Profile helpers
 export const getProfile = async (userId: string) => {
-  const { data, error } = await supabase
+  // Fix: Add proper promise handling
+  const response = await supabase
     .from('profiles')
     .select('*')
     .eq('id', userId)
     .single();
-  return { data, error };
+  
+  return response;
 };
 
 export const updateProfile = async (userId: string, updates: any) => {

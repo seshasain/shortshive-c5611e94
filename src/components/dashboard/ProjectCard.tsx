@@ -8,7 +8,8 @@ import { Play, MoreVertical, Edit } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-interface ProjectCardProps {
+// Refactored interface to match how it's used in both Dashboard and Profile components
+export interface ProjectCardProps {
   id: string;
   title: string;
   description?: string;
@@ -16,6 +17,14 @@ interface ProjectCardProps {
   thumbnail?: string;
   createdAt: string;
   type: 'animation' | 'story';
+  delay?: number;
+  project?: {
+    id: string;
+    title: string;
+    thumbnail: string;
+    date: string;
+    status: 'draft' | 'completed' | 'processing';
+  };
 }
 
 const ProjectCard: React.FC<ProjectCardProps> = ({ 
@@ -25,8 +34,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
   status, 
   thumbnail, 
   createdAt, 
-  type 
+  type,
+  project
 }) => {
+  // If project prop is provided, use its values instead (for backward compatibility)
+  const projectId = project?.id || id;
+  const projectTitle = project?.title || title;
+  const projectStatus = project?.status || status;
+  const projectThumbnail = project?.thumbnail || thumbnail;
+  const projectDate = project?.date || createdAt;
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
@@ -41,18 +58,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
     }
   };
 
-  const thumbnailUrl = thumbnail || 'https://images.unsplash.com/photo-1579547945413-497e1b99dac0?q=80&w=500';
-  const formattedDate = new Date(createdAt).toLocaleDateString();
+  const thumbnailUrl = projectThumbnail || 'https://images.unsplash.com/photo-1579547945413-497e1b99dac0?q=80&w=500';
+  const formattedDate = new Date(projectDate).toLocaleDateString();
 
   return (
     <Card className="overflow-hidden hover:shadow-md transition-all duration-300 h-full flex flex-col">
       <div className="relative">
         <img 
           src={thumbnailUrl} 
-          alt={title}
+          alt={projectTitle}
           className="w-full h-48 object-cover"
         />
-        {status === 'completed' && (
+        {projectStatus === 'completed' && (
           <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
             <Button 
               size="icon" 
@@ -63,16 +80,16 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           </div>
         )}
         <Badge 
-          className={`absolute top-3 right-3 ${getStatusColor(status)}`}
+          className={`absolute top-3 right-3 ${getStatusColor(projectStatus)}`}
         >
-          {status.charAt(0).toUpperCase() + status.slice(1).replace('_', ' ')}
+          {projectStatus.charAt(0).toUpperCase() + projectStatus.slice(1).replace('_', ' ')}
         </Badge>
       </div>
       
       <CardContent className="p-4 flex-grow">
         <div className="flex justify-between items-start">
           <div>
-            <h3 className="text-lg font-bold mb-1">{title}</h3>
+            <h3 className="text-lg font-bold mb-1">{projectTitle}</h3>
             <p className="text-sm text-muted-foreground">
               Last edited: {formattedDate}
             </p>
@@ -107,12 +124,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({
           >
             Preview
           </Button>
-          <Link to={status === 'draft' ? `/build-story?id=${id}` : `/review-story?id=${id}`}>
+          <Link to={projectStatus === 'draft' ? `/build-story?id=${projectId}` : `/review-story?id=${projectId}`}>
             <Button 
               size="sm" 
               className="bg-pixar-blue text-white hover:bg-pixar-darkblue"
             >
-              {status === 'draft' ? 'Continue Editing' : 'View Details'}
+              {projectStatus === 'draft' ? 'Continue Editing' : 'View Details'}
             </Button>
           </Link>
         </div>

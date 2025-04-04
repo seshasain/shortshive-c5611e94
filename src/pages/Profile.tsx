@@ -44,7 +44,7 @@ const Profile = () => {
     enabled: !!userId,
   });
 
-  // Placeholder data for recent activity
+  // Placeholder data for recent activity - make sure type is strictly 'animation' | 'story'
   const recentActivity = [
     {
       id: '1',
@@ -53,7 +53,7 @@ const Profile = () => {
       status: 'completed',
       thumbnail: 'https://images.unsplash.com/photo-1462331940025-496dfbfc7564',
       createdAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-      type: 'animation'
+      type: 'animation' as const // Using const assertion to fix the type issue
     },
     {
       id: '2',
@@ -62,7 +62,7 @@ const Profile = () => {
       status: 'in_progress',
       thumbnail: 'https://images.unsplash.com/photo-1551244072-5d12893278ab',
       createdAt: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(),
-      type: 'story'
+      type: 'story' as const // Using const assertion to fix the type issue
     }
   ];
 
