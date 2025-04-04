@@ -7,13 +7,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: true
-  }
-});
+// Initialize Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // List of approved domains for registration
 const APPROVED_DOMAINS = [
@@ -54,8 +49,8 @@ export const isApprovedDomain = (email: string): boolean => {
   return false;
 };
 
-// Auth helper functions
-export const signUp = async (email: string, password: string) => {
+// Sign up function using Supabase Auth
+export const signUp = async (email: string, password: string, fullName: string) => {
   try {
     // Check if the email domain is approved
     if (!isApprovedDomain(email)) {
@@ -65,162 +60,64 @@ export const signUp = async (email: string, password: string) => {
       };
     }
 
-    console.log('Attempting to sign up user with email:', email);
-
-    // Sign up the user
+    // Sign up with Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login?confirmed=true`,
         data: {
-          email: email // Add email to user metadata
+          full_name: fullName
         }
       }
     });
 
-    if (error) {
-      console.error('Supabase auth error details:', {
-        message: error.message,
-        status: error.status,
-        name: error.name,
-        details: error
-      });
-      
-      if (error.message.includes('Database error finding user')) {
-        return {
-          data: null,
-          error: new Error('Unable to create account. Please try again later or contact support if the issue persists.')
-        };
+    if (error) throw error;
+
+    // Create profile after successful signup
+    if (data.user) {
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .insert([
+          {
+            id: data.user.id,
+            email,
+            full_name: fullName,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }
+        ]);
+
+      if (profileError) {
+        console.error('Error creating profile:', profileError);
+        // Don't throw here - the user is still created
       }
-      return { data: null, error };
     }
 
-    console.log('Signup successful:', data);
     return { data, error: null };
-  } catch (err) {
-    console.error('Unexpected error during signup:', err);
-    return { 
-      data: null, 
-      error: err instanceof Error ? err : new Error('An unexpected error occurred during signup')
-    };
+  } catch (error) {
+    console.error('Error during signup:', error);
+    return { data: null, error };
   }
 };
 
-// Create profile function
-export const createProfile = async (userId: string, profileData: { 
-  full_name: string, 
-  phone_number?: string, 
-  country?: string,
-  email?: string,
-  avatar_url?: string,
-  date_of_birth?: Date
-}) => {
-  try {
-    console.log('Creating profile with data:', { id: userId, ...profileData });
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .insert([{
-        id: userId,
-        ...profileData,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }])
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Supabase error creating profile:', error);
-      return { data: null, error };
-    }
-
-    console.log('Profile created successfully:', data);
-    return { data, error: null };
-  } catch (err) {
-    console.error('Unexpected error creating profile:', err);
-    return { data: null, error: err instanceof Error ? err : new Error('Unknown error creating profile') };
-  }
-};
-
+// Sign in function using Supabase Auth
 export const signIn = async (email: string, password: string) => {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password,
+      password
     });
 
-    if (error) {
-      return { data, error };
-    }
-
-    // Check if there's pending signup data
-    const pendingSignupData = localStorage.getItem('pendingSignupData');
-    if (pendingSignupData) {
-      const signupData = JSON.parse(pendingSignupData);
-      
-      // Create profile if it doesn't exist
-      const { data: existingProfile } = await getProfile(data.user.id);
-      if (!existingProfile) {
-        // Remove userId from signupData since we'll pass it separately
-        const { userId, ...profileData } = signupData;
-        const { error: profileError } = await createProfile(data.user.id, profileData);
-        if (profileError) {
-          console.error('Error creating profile during first login:', profileError);
-          return { data, error: profileError };
-        }
-      }
-      
-      // Clear pending signup data
-      localStorage.removeItem('pendingSignupData');
-    }
-
-    return { data, error };
-  } catch (err) {
-    console.error('Error during sign in:', err);
-    return { data: null, error: err instanceof Error ? err : new Error('Unknown error during sign in') };
+    if (error) throw error;
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error during signin:', error);
+    return { data: null, error };
   }
 };
 
+// Sign out function
 export const signOut = async () => {
   const { error } = await supabase.auth.signOut();
   return { error };
-};
-
-// Profile helpers
-export const getProfile = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
-    .eq('id', userId)
-    .single();
-  return { data, error };
-};
-
-export const updateProfile = async (userId: string, updates: any) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .update(updates)
-    .eq('id', userId);
-  return { data, error };
-};
-
-// Animation helpers
-export const getAnimations = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('animations')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  return { data, error };
-};
-
-// Story helpers
-export const getStories = async (userId: string) => {
-  const { data, error } = await supabase
-    .from('stories')
-    .select('*')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: false });
-  return { data, error };
 };
