@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Film, Loader2, CheckCircle2 } from 'lucide-react';
+import { Film, Loader2, Mail, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { signIn } from '@/lib/supabase';
 
 const Login = () => {
@@ -16,17 +16,12 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showSuccessMessage, setShowSuccessMessage] = useState(false);
 
-  useEffect(() => {
-    // Check if user just signed up successfully
-    const searchParams = new URLSearchParams(location.search);
-    if (searchParams.get('signup') === 'success') {
-      setShowSuccessMessage(true);
-      // Clear the URL parameter
-      window.history.replaceState({}, '', '/login');
-    }
-  }, [location]);
+  // Check URL parameters for verification status
+  const isVerificationPending = location.search.includes('verification=pending');
+  const isConfirmed = location.search.includes('confirmed=true');
+  const hasError = location.hash.includes('error=');
+  const isOtpExpired = location.hash.includes('error_code=otp_expired');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,14 +29,12 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const { error: signInError } = await signIn(email, password);
-      
-      if (signInError) throw signInError;
-
-      // Redirect to dashboard on successful login
+      const { data, error } = await signIn(email, password);
+      if (error) throw error;
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.message || 'An error occurred during sign in');
+      console.error('Login error:', err);
+      setError(err.message || 'Failed to sign in');
     } finally {
       setIsLoading(false);
     }
@@ -70,26 +63,29 @@ const Login = () => {
           <CardHeader className="space-y-1">
             <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
             <CardDescription>
-              Enter your email to sign in to your account
+              Sign in to your account to continue
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {showSuccessMessage && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-6"
-              >
-                <Alert className="bg-green-50 border-green-200">
-                  <CheckCircle2 className="h-4 w-4 text-green-600" />
-                  <AlertDescription className="text-green-700">
-                    Account created successfully! Please check your email for verification.
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {isVerificationPending && (
+                <Alert className="bg-green-50 border-green-200 text-green-800">
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  <AlertDescription className="text-green-800">
+                    Please check your email for a verification link. Your profile will be created after verification.
                   </AlertDescription>
                 </Alert>
-              </motion.div>
-            )}
+              )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+              {isOtpExpired && (
+                <Alert className="bg-amber-50 border-amber-200">
+                  <AlertTriangle className="h-4 w-4 text-amber-500" />
+                  <AlertDescription className="text-amber-800">
+                    Your verification link has expired. Please sign up again to receive a new verification email.
+                  </AlertDescription>
+                </Alert>
+              )}
+              
               {error && (
                 <Alert variant="destructive">
                   <AlertDescription>{error}</AlertDescription>
@@ -101,24 +97,15 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@example.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   className="border-pixar-blue/20"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password">Password</Label>
-                  <Link 
-                    to="/forgot-password"
-                    className="text-sm text-pixar-blue hover:text-pixar-darkblue"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
+                <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
                   type="password"
@@ -131,7 +118,7 @@ const Login = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-pixar-blue hover:bg-pixar-darkblue"
+                className="w-full" 
                 disabled={isLoading}
               >
                 {isLoading ? (
@@ -140,21 +127,27 @@ const Login = () => {
                     Signing in...
                   </>
                 ) : (
-                  'Sign In'
+                  'Sign in'
                 )}
               </Button>
             </form>
           </CardContent>
-          <CardFooter>
-            <p className="text-sm text-muted-foreground text-center w-full">
-              Don't have an account?{" "}
-              <Link 
-                to="/signup" 
-                className="text-pixar-blue hover:text-pixar-darkblue font-medium underline-offset-4 hover:underline"
-              >
+          <CardFooter className="flex flex-col space-y-4">
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link to="/signup" className="text-pixar-blue hover:underline">
                 Sign up
               </Link>
             </p>
+            {isOtpExpired && (
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => navigate('/signup')}
+              >
+                Sign up again
+              </Button>
+            )}
           </CardFooter>
         </Card>
       </motion.div>

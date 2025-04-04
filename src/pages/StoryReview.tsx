@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { refineStory } from '@/services/api';
+import { saveStory, checkSavedStory, resumeSavedStory } from '@/services/savedStory';
+import { useToast } from '@/components/ui/use-toast';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,6 +56,8 @@ interface Scene {
 const StoryReview = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { toast } = useToast();
+  const { id: storyId } = useParams();
   
   // Default values for when there's no state
   const [storyText, setStoryText] = useState("");
@@ -70,6 +74,9 @@ const StoryReview = () => {
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasSavedState, setHasSavedState] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<any>(null);
   
   // Define emotionToColorMap outside of useEffect to avoid duplication
   const emotionToColorMap: Record<string, string> = {
@@ -161,31 +168,106 @@ const StoryReview = () => {
     }
   }, [location.state, navigate]);
   
+  // Check for saved story on mount
+  useEffect(() => {
+    const checkForSavedStory = async () => {
+      if (!storyId) return;
+
+      const { data, error } = await checkSavedStory(storyId);
+      if (error) {
+        console.error('Error checking saved story:', error);
+        return;
+      }
+
+      if (data) {
+        setHasSavedState(true);
+        // If there's generation state, restore it
+        if (data.generationState) {
+          setStoryTitle(data.generationState.title || '');
+          setStoryText(data.generationState.storyContent || '');
+          setScenes(data.generationState.scenes || []);
+          setColorPalette(data.generationState.visualSettings?.colorPalette || 'auto');
+          setAspectRatio(data.generationState.visualSettings?.aspectRatio || '16:9');
+          
+          toast({
+            title: 'Story loaded',
+            description: 'Successfully loaded your saved story.',
+            variant: 'default',
+          });
+        }
+      }
+    };
+
+    checkForSavedStory();
+  }, [storyId, toast]);
+  
   const handleBack = () => {
     navigate('/build-story');
   };
   
-  const handleGenerate = () => {
-    // Prepare the final data for animation generation
-    const animationData = {
-      storyContent: storyText,
-      scenes: scenes,
-      visualSettings: {
-        colorPalette,
-        aspectRatio
-      },
-      originalStoryType: storyType,
-      originalPrompt: storyType === 'ai-prompt' ? promptText : null,
-      timestamp: new Date().toISOString()
-    };
-    
-    // Log the complete data being sent for animation generation
-    console.log('Sending animation data to generation service:');
-    console.log(JSON.stringify(animationData, null, 2));
-    
-    // In a real implementation, you might make an API call here
-    // For now, just navigate to the next page
-    navigate('/generating');
+  const handleGenerate = async () => {
+    setIsLoading(true);
+    try {
+      // Prepare the animation data
+      const animationData = {
+        storyContent: storyText,
+        scenes: scenes,
+        visualSettings: {
+          colorPalette,
+          aspectRatio
+        },
+        originalStoryType: storyType,
+        originalPrompt: storyType === 'ai-prompt' ? promptText : null,
+        timestamp: new Date().toISOString()
+      };
+
+      // Save the current state before generating
+      if (storyId) {
+        const { error: saveError } = await saveStory(
+          storyId,
+          {
+            title: storyTitle,
+            storyContent: storyText,
+            scenes,
+            visualSettings: {
+              colorPalette,
+              aspectRatio
+            }
+          }
+        );
+
+        if (saveError) {
+          toast({
+            title: 'Error saving story',
+            description: 'Could not save story state. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+      }
+
+      // Proceed with generation
+      const response = await fetch('/api/generate-animation', {
+        method: 'POST',
+        body: JSON.stringify(animationData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate animation');
+      }
+
+      // If successful, navigate to generating page
+      navigate('/generating');
+    } catch (error) {
+      console.error('Error generating animation:', error);
+      toast({
+        title: 'Generation failed',
+        description: 'Could not generate the animation. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleEditScene = (id: string, newText: string) => {
@@ -239,6 +321,37 @@ const StoryReview = () => {
     setTimeout(() => {
       setSaveSuccess(false);
     }, 3000);
+  };
+  
+  // Add resume functionality
+  const handleResume = async () => {
+    if (!storyId) return;
+
+    const { data, error } = await resumeSavedStory(storyId);
+    if (error) {
+      toast({
+        title: 'Error resuming story',
+        description: 'Could not resume the saved story. Please try again.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (data) {
+      // Restore the generation state
+      const { generationState, story } = data;
+      setStoryTitle(generationState.title || '');
+      setStoryText(generationState.storyContent || '');
+      setScenes(generationState.scenes || []);
+      setColorPalette(generationState.visualSettings?.colorPalette || 'auto');
+      setAspectRatio(generationState.visualSettings?.aspectRatio || '16:9');
+
+      toast({
+        title: 'Story resumed',
+        description: 'Successfully restored your saved story.',
+        variant: 'default',
+      });
+    }
   };
   
   return (
@@ -741,6 +854,34 @@ const StoryReview = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      
+      {hasSavedState && (
+        <Card className="mb-4 border-blue-200">
+          <CardHeader>
+            <CardTitle className="text-blue-600">Resume Saved Story</CardTitle>
+            <CardDescription>
+              You have a saved version of this story. Would you like to resume from where you left off?
+            </CardDescription>
+          </CardHeader>
+          <CardFooter className="flex justify-end space-x-2">
+            <Button
+              variant="outline"
+              onClick={handleResume}
+              disabled={isSaving}
+              className="border-blue-200 hover:bg-blue-50"
+            >
+              Resume Saved Story
+            </Button>
+            <Button
+              onClick={handleGenerate}
+              disabled={isSaving}
+              className="bg-blue-600 text-white hover:bg-blue-700"
+            >
+              Start Fresh
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
     </DashboardLayout>
   );
 };

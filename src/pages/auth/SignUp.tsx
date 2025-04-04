@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Film, Loader2, Check, X } from 'lucide-react';
-import { signUp, createProfile, isApprovedDomain } from '@/lib/supabase';
+import { signUp, isApprovedDomain } from '@/lib/auth';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // List of countries for the dropdown
@@ -23,7 +23,7 @@ const SignUp = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [fullName, setFullName] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [country, setCountry] = useState('');
   const [error, setError] = useState('');
@@ -75,8 +75,8 @@ const SignUp = () => {
     setError('');
 
     // Validation
-    if (!name.trim()) {
-      setError('Name is required');
+    if (!fullName.trim()) {
+      setError('Full name is required');
       return;
     }
 
@@ -95,9 +95,8 @@ const SignUp = () => {
       return;
     }
 
-    // Email format basic validation
+    // Email validation
     if (!email.includes('@') || !email.split('@')[1]?.includes('.')) {
-      // Check if it might be a partial domain that the user intended to complete
       if (isLikelyIncompleteCommonDomain(email)) {
         setError('Your email appears incomplete. Please enter a full email address.');
       } else {
@@ -115,31 +114,24 @@ const SignUp = () => {
     setIsLoading(true);
 
     try {
-      // Sign up with email/password
-      const { data: authData, error: signUpError } = await signUp(email, password);
+      const { data, error } = await signUp(email, password, fullName);
       
-      if (signUpError) throw signUpError;
-
-      // Create profile with additional information
-      if (authData && authData.user) {
-        const { error: profileError } = await createProfile(authData.user.id, {
-          name: name.trim(),
-          phone_number: phoneNumber.trim() || null,
-          country: country,
-          profession: null // Set profession to null since we removed the field
-        });
-
-        if (profileError) {
-          console.error("Error creating profile:", profileError);
-          // Continue with signup success even if profile creation fails
-          // We could handle this more gracefully in a production app
-        }
+      if (error) {
+        console.error('Signup error:', error);
+        setError(error.message);
+        return;
       }
 
-      // Redirect to login page with success message
-      navigate('/login?signup=success');
+      // Show success message and redirect to login
+      navigate('/login?verification=pending', { 
+        state: { 
+          message: 'Please check your email for a verification link.' 
+        }
+      });
+      
     } catch (err: any) {
-      setError(err.message || 'An error occurred during sign up');
+      console.error('Signup process error:', err);
+      setError('An unexpected error occurred. Please try again later.');
     } finally {
       setIsLoading(false);
     }
@@ -180,13 +172,13 @@ const SignUp = () => {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name *</Label>
+                <Label htmlFor="fullName">Full Name *</Label>
                 <Input
-                  id="name"
+                  id="fullName"
                   type="text"
                   placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
                   required
                   className="border-pixar-blue/20"
                 />
@@ -194,56 +186,52 @@ const SignUp = () => {
               
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
-                <div className="relative">
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={handleEmailChange}
-                    onBlur={handleEmailBlur}
-                    required
-                    className={`border-pixar-blue/20 pr-10 ${emailError ? 'border-red-300 focus:border-red-500' : ''}`}
-                  />
-                  {email && email.includes('@') && emailError && (
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                      <X className="h-5 w-5 text-red-500" />
-                    </div>
-                  )}
-                </div>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="john@example.com"
+                  value={email}
+                  onChange={handleEmailChange}
+                  onBlur={handleEmailBlur}
+                  required
+                  className="border-pixar-blue/20"
+                />
                 {emailError && (
                   <p className="text-sm text-red-500 mt-1">{emailError}</p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+                <Label htmlFor="country">Country *</Label>
+                <Select 
+                  value={country} 
+                  onValueChange={setCountry} 
+                  name="country"
+                  required
+                >
+                  <SelectTrigger id="country" className="w-full bg-background border-pixar-blue/20 text-foreground">
+                    <SelectValue placeholder="Select your country" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-white">
+                    {countries.map((c) => (
+                      <SelectItem key={c} value={c}>{c}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="phone">Phone Number (Optional)</Label>
                 <Input
-                  id="phoneNumber"
+                  id="phone"
                   type="tel"
-                  placeholder="+1 123 456 7890"
+                  placeholder="+1234567890"
                   value={phoneNumber}
                   onChange={(e) => setPhoneNumber(e.target.value)}
                   className="border-pixar-blue/20"
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="country">Country *</Label>
-                <Select value={country} onValueChange={setCountry} required>
-                  <SelectTrigger className="border-pixar-blue/20">
-                    <SelectValue placeholder="Select your country" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {countries.map((country) => (
-                      <SelectItem key={country} value={country}>
-                        {country}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
               <div className="space-y-2">
                 <Label htmlFor="password">Password *</Label>
                 <Input
@@ -255,11 +243,11 @@ const SignUp = () => {
                   className="border-pixar-blue/20"
                 />
               </div>
-              
+
               <div className="space-y-2">
-                <Label htmlFor="confirm-password">Confirm Password *</Label>
+                <Label htmlFor="confirmPassword">Confirm Password *</Label>
                 <Input
-                  id="confirm-password"
+                  id="confirmPassword"
                   type="password"
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
@@ -270,8 +258,8 @@ const SignUp = () => {
 
               <Button 
                 type="submit" 
-                className="w-full bg-pixar-blue hover:bg-pixar-darkblue"
-                disabled={isLoading || !!emailError}
+                className="w-full" 
+                disabled={isLoading}
               >
                 {isLoading ? (
                   <>
@@ -279,18 +267,15 @@ const SignUp = () => {
                     Creating account...
                   </>
                 ) : (
-                  'Sign Up'
+                  'Create account'
                 )}
               </Button>
             </form>
           </CardContent>
           <CardFooter>
-            <p className="text-sm text-muted-foreground text-center w-full">
-              Already have an account?{" "}
-              <Link 
-                to="/login" 
-                className="text-pixar-blue hover:text-pixar-darkblue font-medium underline-offset-4 hover:underline"
-              >
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-pixar-blue hover:underline">
                 Sign in
               </Link>
             </p>

@@ -7,7 +7,13 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: true
+  }
+});
 
 // List of approved domains for registration
 const APPROVED_DOMAINS = [
@@ -50,45 +56,130 @@ export const isApprovedDomain = (email: string): boolean => {
 
 // Auth helper functions
 export const signUp = async (email: string, password: string) => {
-  // Check if the email domain is approved
-  if (!isApprovedDomain(email)) {
+  try {
+    // Check if the email domain is approved
+    if (!isApprovedDomain(email)) {
+      return { 
+        data: null, 
+        error: new Error('Registration is restricted to approved email domains. Please use a different email address.')
+      };
+    }
+
+    console.log('Attempting to sign up user with email:', email);
+
+    // Sign up the user
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/login?confirmed=true`,
+        data: {
+          email: email // Add email to user metadata
+        }
+      }
+    });
+
+    if (error) {
+      console.error('Supabase auth error details:', {
+        message: error.message,
+        status: error.status,
+        name: error.name,
+        details: error
+      });
+      
+      if (error.message.includes('Database error finding user')) {
+        return {
+          data: null,
+          error: new Error('Unable to create account. Please try again later or contact support if the issue persists.')
+        };
+      }
+      return { data: null, error };
+    }
+
+    console.log('Signup successful:', data);
+    return { data, error: null };
+  } catch (err) {
+    console.error('Unexpected error during signup:', err);
     return { 
       data: null, 
-      error: new Error('Registration is restricted to approved email domains. Please use a different email address.')
+      error: err instanceof Error ? err : new Error('An unexpected error occurred during signup')
     };
   }
-
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-  });
-  return { data, error };
 };
 
 // Create profile function
 export const createProfile = async (userId: string, profileData: { 
-  name: string, 
+  full_name: string, 
   phone_number?: string, 
-  country: string, 
-  profession?: string 
+  country?: string,
+  email?: string,
+  avatar_url?: string,
+  date_of_birth?: Date
 }) => {
-  const { data, error } = await supabase
-    .from('profiles')
-    .insert([{
-      id: userId,
-      ...profileData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
-    }]);
-  return { data, error };
+  try {
+    console.log('Creating profile with data:', { id: userId, ...profileData });
+
+    const { data, error } = await supabase
+      .from('profiles')
+      .insert([{
+        id: userId,
+        ...profileData,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Supabase error creating profile:', error);
+      return { data: null, error };
+    }
+
+    console.log('Profile created successfully:', data);
+    return { data, error: null };
+  } catch (err) {
+    console.error('Unexpected error creating profile:', err);
+    return { data: null, error: err instanceof Error ? err : new Error('Unknown error creating profile') };
+  }
 };
 
 export const signIn = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  return { data, error };
+  try {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error) {
+      return { data, error };
+    }
+
+    // Check if there's pending signup data
+    const pendingSignupData = localStorage.getItem('pendingSignupData');
+    if (pendingSignupData) {
+      const signupData = JSON.parse(pendingSignupData);
+      
+      // Create profile if it doesn't exist
+      const { data: existingProfile } = await getProfile(data.user.id);
+      if (!existingProfile) {
+        // Remove userId from signupData since we'll pass it separately
+        const { userId, ...profileData } = signupData;
+        const { error: profileError } = await createProfile(data.user.id, profileData);
+        if (profileError) {
+          console.error('Error creating profile during first login:', profileError);
+          return { data, error: profileError };
+        }
+      }
+      
+      // Clear pending signup data
+      localStorage.removeItem('pendingSignupData');
+    }
+
+    return { data, error };
+  } catch (err) {
+    console.error('Error during sign in:', err);
+    return { data: null, error: err instanceof Error ? err : new Error('Unknown error during sign in') };
+  }
 };
 
 export const signOut = async () => {

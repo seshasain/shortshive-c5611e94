@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Home, Video, FileText, Settings, LogOut, HelpCircle, 
@@ -10,6 +10,7 @@ import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { supabase } from '@/lib/supabase';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,35 @@ interface DashboardLayoutProps {
 
 const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [profile, setProfile] = useState<any>(null);
+  
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', session.user.id)
+        .single();
+
+      if (error) throw error;
+      setProfile(data);
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    }
+  };
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate('/login');
+  };
   
   const navItems = [
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
@@ -34,8 +64,8 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           <div className="lg:hidden">
             <Sheet>
               <SheetTrigger asChild>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-6 w-6" />
+                <Button variant="ghost" size="icon" className="hover:bg-pixar-blue/5">
+                  <Menu className="h-6 w-6 text-gray-700" />
                 </Button>
               </SheetTrigger>
               <SheetContent side="left" className="p-0 w-64">
@@ -55,7 +85,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                       <Link to={item.href} key={item.href}>
                         <Button
                           variant={isActive ? "default" : "ghost"}
-                          className={`w-full justify-start ${isActive ? 'bg-pixar-blue text-white' : ''}`}
+                          className={`w-full justify-start ${isActive ? 'bg-pixar-blue text-white' : 'hover:bg-pixar-blue/5 hover:text-pixar-blue'}`}
                         >
                           <Icon className="mr-2 h-5 w-5" />
                           {item.label}
@@ -65,7 +95,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
                   })}
                 </nav>
                 <div className="mt-auto p-4 border-t">
-                  <Button variant="ghost" className="w-full justify-start text-red-500">
+                  <Button variant="ghost" className="w-full justify-start text-red-500 hover:bg-red-50 hover:text-red-600">
                     <LogOut className="mr-2 h-5 w-5" />
                     Logout
                   </Button>
@@ -104,41 +134,74 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
           
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <Button variant="ghost" size="icon" className="text-gray-600">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-gray-700 hover:bg-pixar-blue/5 hover:text-pixar-blue transition-colors"
+            >
               <Bell className="h-5 w-5" />
             </Button>
-            <Button variant="ghost" size="icon" className="text-gray-600">
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="text-gray-700 hover:bg-pixar-blue/5 hover:text-pixar-blue transition-colors"
+            >
               <HelpCircle className="h-5 w-5" />
             </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                  <Avatar>
-                    <AvatarImage src="https://source.unsplash.com/random/100x100?profile" alt="Profile" />
-                    <AvatarFallback>JD</AvatarFallback>
+                <Button 
+                  variant="ghost" 
+                  className="relative h-10 w-10 rounded-full ring-2 ring-transparent hover:ring-pixar-blue/20 transition-all duration-300"
+                >
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} className="object-cover" />
+                    <AvatarFallback className="bg-gradient-to-r from-pixar-blue to-pixar-teal text-white">
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    </AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent className="w-56" align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  <span>Profile</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <CreditCard className="mr-2 h-4 w-4" />
-                  <span>Billing</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-red-500">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
+              <DropdownMenuContent 
+                className="w-64 mt-2 p-2 bg-white/95 backdrop-blur-lg shadow-xl shadow-blue-500/10 border-pixar-blue/10" 
+                align="end"
+              >
+                <div className="flex items-center space-x-3 p-2 mb-2">
+                  <Avatar className="h-10 w-10 ring-2 ring-pixar-blue/20">
+                    <AvatarImage src={profile?.avatar_url} alt={profile?.full_name} className="object-cover" />
+                    <AvatarFallback className="bg-gradient-to-r from-pixar-blue to-pixar-teal text-white">
+                      {profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="font-semibold text-gray-900">{profile?.full_name}</span>
+                    <span className="text-sm text-gray-500">{profile?.email}</span>
+                  </div>
+                </div>
+                <DropdownMenuSeparator className="bg-pixar-blue/10" />
+                <div className="p-1">
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/settings')}
+                    className="cursor-pointer rounded-lg mb-1 p-2 text-gray-700 hover:text-pixar-blue hover:bg-pixar-blue/5 focus:text-pixar-blue focus:bg-pixar-blue/5 transition-all duration-200"
+                  >
+                    <User className="mr-2 h-4 w-4" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={() => navigate('/settings')}
+                    className="cursor-pointer rounded-lg mb-1 p-2 text-gray-700 hover:text-pixar-blue hover:bg-pixar-blue/5 focus:text-pixar-blue focus:bg-pixar-blue/5 transition-all duration-200"
+                  >
+                    <Settings className="mr-2 h-4 w-4" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem 
+                    onClick={handleSignOut}
+                    className="cursor-pointer rounded-lg p-2 text-gray-700 hover:text-red-600 hover:bg-red-50/50 focus:text-red-600 focus:bg-red-50/50 transition-all duration-200"
+                  >
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>Logout</span>
+                  </DropdownMenuItem>
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
