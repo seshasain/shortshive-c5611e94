@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ProjectCard } from '@/components/dashboard/ProjectCard';
+import ProjectCard from '@/components/dashboard/ProjectCard';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 const Profile = () => {

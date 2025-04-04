@@ -5,7 +5,7 @@ import { Plus, Film, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ProjectCard } from '@/components/dashboard/ProjectCard';
+import ProjectCard from '@/components/dashboard/ProjectCard';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 
 const MyAnimations = () => {

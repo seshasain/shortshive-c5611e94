@@ -8,26 +8,30 @@ import { Play, MoreVertical, Edit } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-type Project = {
-  id: string;
-  title: string;
-  thumbnail: string;
-  date: string;
-  status: 'draft' | 'completed' | 'processing';
-}
-
 interface ProjectCardProps {
-  project: Project;
-  delay?: number;
+  title: string;
+  description: string;
+  image: string;
+  status: string;
+  date: string;
+  id?: string | number;
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ 
+  title, 
+  description, 
+  image, 
+  status, 
+  date,
+  id 
+}) => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'draft':
         return 'bg-gray-100 text-gray-800';
+      case 'in_progress':
       case 'processing':
         return 'bg-blue-100 text-blue-800';
       default:
@@ -35,32 +39,19 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
     }
   };
 
-  const item = {
-    hidden: { opacity: 0, y: 20 },
-    show: { 
-      opacity: 1, 
-      y: 0,
-      transition: { 
-        duration: 0.5,
-        delay 
-      } 
-    }
-  };
-
   return (
     <motion.div 
-      variants={item}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="mb-5"
     >
       <Card className="overflow-hidden hover:shadow-md transition-all duration-300">
         <div className="relative">
           <img 
-            src={project.thumbnail} 
-            alt={project.title}
+            src={image} 
+            alt={title}
             className="w-full h-48 object-cover"
           />
-          {project.status === 'completed' && (
+          {status === 'completed' && (
             <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button 
                 size="icon" 
@@ -71,18 +62,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
             </div>
           )}
           <Badge 
-            className={`absolute top-3 right-3 ${getStatusColor(project.status)}`}
+            className={`absolute top-3 right-3 ${getStatusColor(status)}`}
           >
-            {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
+            {status.charAt(0).toUpperCase() + status.slice(1)}
           </Badge>
         </div>
         
         <CardContent className="p-4">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-bold mb-1">{project.title}</h3>
+              <h3 className="text-lg font-bold mb-1">{title}</h3>
               <p className="text-sm text-muted-foreground">
-                Last edited: {new Date(project.date).toLocaleDateString()}
+                Last edited: {date}
               </p>
             </div>
             <DropdownMenu>
@@ -111,12 +102,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
           >
             Preview
           </Button>
-          <Link to={project.status === 'draft' ? `/build-story?id=${project.id}` : `/review-story?id=${project.id}`}>
+          <Link to={status === 'draft' ? `/build-story?id=${id}` : `/review-story?id=${id}`}>
             <Button 
               size="sm" 
               className="bg-pixar-blue text-white hover:bg-pixar-darkblue"
             >
-              {project.status === 'draft' ? 'Continue Editing' : 'View Details'}
+              {status === 'draft' ? 'Continue Editing' : 'View Details'}
             </Button>
           </Link>
         </CardFooter>
