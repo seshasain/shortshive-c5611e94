@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
@@ -18,9 +17,10 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import SceneCard from '@/components/dashboard/SceneCard';
 import StoryLoadingAnimation from '@/components/StoryLoadingAnimation';
-import { supabase } from '@/integrations/supabase/client';
 
-const mockScenes = [];
+const mockScenes = [
+ 
+];
 
 const colorPalettes = [
   { id: 'auto', name: 'Auto', colors: ['#55A4F3', '#60C8DC', '#8BE0CB', '#ACECBE', '#F2F7C4'] },
@@ -357,7 +357,7 @@ const StoryReview = () => {
   return (
     <DashboardLayout>
       <div className="container-custom py-16">
-        {/* Animated background elements */}
+        {/* Animated background elements - match StoryBuilder */}
         <div className="absolute top-0 right-0 -z-10 w-full h-full overflow-hidden">
           <motion.div 
             animate={{ 
@@ -377,7 +377,6 @@ const StoryReview = () => {
           />
         </div>
         
-        {/* Header Section */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -569,149 +568,116 @@ const StoryReview = () => {
               transition={{ duration: 0.5 }}
             >
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                {/* Combined Visual Settings Card */}
+                {/* Animation Settings Card */}
                 <Card className="overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
                   <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-3 pt-6">
                     <CardTitle className="flex items-center text-xl">
                       <Sparkles className="mr-3 h-5 w-5 text-pixar-blue" />
-                      Animation Style & Format
+                      Visual Style
                     </CardTitle>
                     <CardDescription className="text-gray-500">
-                      Define the visual aesthetic and format of your animation
+                      Customize the visual aesthetic of your animation
                     </CardDescription>
                   </CardHeader>
-                  
                   <CardContent className="space-y-8 p-6">
                     {/* Color Palette */}
-                    <div className="space-y-5">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base font-medium flex items-center">
-                          <Palette className="mr-2 h-4 w-4 text-pixar-blue" />
-                          Color Palette
-                        </Label>
-                        
-                        <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full">
-                          Selected: {colorPalettes.find(p => p.id === colorPalette)?.name || 'Auto'}
-                        </span>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-3">
-                        {colorPalettes.map((palette) => (
-                          <div 
-                            key={palette.id}
-                            onClick={() => setColorPalette(palette.id)}
-                            className={`cursor-pointer rounded-lg p-3 transition-all hover:scale-105 
-                                ${colorPalette === palette.id 
-                                  ? 'ring-2 ring-pixar-blue bg-pixar-blue/5' 
-                                  : 'border border-gray-200 hover:border-gray-300'}`}
-                          >
-                            <div className="flex h-6 rounded-md overflow-hidden mb-2 shadow-sm">
-                              {palette.colors.map((color, index) => (
-                                <div 
-                                  key={index}
-                                  style={{ 
-                                    backgroundColor: color,
-                                    width: `${100 / palette.colors.length}%` 
-                                  }}
+                    <div>
+                      <Label className="text-base mb-4 flex items-center font-medium">
+                        <Palette className="mr-2 h-4 w-4 text-pixar-blue" />
+                        Color Palette
+                      </Label>
+                      <RadioGroup value={colorPalette} onValueChange={setColorPalette}>
+                        <div className="grid grid-cols-3 gap-3">
+                          {colorPalettes.map((palette) => (
+                            <div 
+                              key={palette.id}
+                              onClick={() => setColorPalette(palette.id)}
+                              className={`cursor-pointer rounded-lg p-3 transition-all hover:scale-105 
+                                      ${colorPalette === palette.id 
+                                        ? 'ring-2 ring-pixar-blue bg-pixar-blue/5' 
+                                        : 'border border-gray-200 hover:border-gray-300'}`}
+                            >
+                              <div className="flex h-6 rounded-md overflow-hidden mb-2 shadow-sm">
+                                {palette.colors.map((color, index) => (
+                                  <div 
+                                    key={index}
+                                    style={{ 
+                                      backgroundColor: color,
+                                      width: `${100 / palette.colors.length}%` 
+                                    }}
+                                  />
+                                ))}
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium">{palette.name}</p>
+                                <RadioGroupItem 
+                                  value={palette.id} 
+                                  id={`palette-${palette.id}`}
+                                  className="h-3.5 w-3.5 text-pixar-blue"
                                 />
-                              ))}
+                              </div>
+                              {palette.id === 'auto' && (
+                                <p className="text-xs text-muted-foreground mt-1">
+                                  AI-selected based on story emotion
+                                </p>
+                              )}
                             </div>
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium">{palette.name}</p>
-                              <RadioGroupItem 
-                                value={palette.id} 
-                                id={`palette-${palette.id}`}
-                                className="h-3.5 w-3.5 text-pixar-blue"
-                              />
-                            </div>
-                            {palette.id === 'auto' && (
-                              <p className="text-xs text-muted-foreground mt-1">
-                                AI-selected based on story emotion
-                              </p>
-                            )}
-                          </div>
-                        ))}
-                      </div>
+                          ))}
+                        </div>
+                      </RadioGroup>
                     </div>
                     
-                    <Separator className="my-6" />
-                    
-                    {/* Aspect Ratio / Format */}
-                    <div className="space-y-5">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-base font-medium flex items-center">
-                          <VideoIcon className="mr-2 h-4 w-4 text-pixar-orange" />
-                          Output Format
-                        </Label>
-                        
-                        <span className="text-sm text-muted-foreground bg-gray-100 px-3 py-1 rounded-full">
-                          {aspectRatio === '16:9' ? 'Landscape' : 'Portrait'} ({aspectRatio})
-                        </span>
-                      </div>
-                      
-                      <div className="flex flex-wrap items-center justify-center gap-x-12 pt-2">
-                        <div className="flex flex-col items-center space-y-3">
+                    {/* Aspect Ratio */}
+                    <div className="p-4 rounded-xl bg-gradient-to-r from-pixar-orange/5 to-transparent border border-pixar-orange/10">
+                      <Label className="text-base mb-4 flex items-center font-medium">
+                        <VideoIcon className="mr-2 h-4 w-4 text-pixar-orange" />
+                        Output Format
+                      </Label>
+                      <RadioGroup value={aspectRatio} onValueChange={setAspectRatio} className="flex space-x-12 pt-2">
+                        <div className="flex flex-col items-center space-y-2">
                           <div 
-                            className={`relative cursor-pointer transition-all 
-                              ${aspectRatio === '16:9' ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
+                            className={`relative cursor-pointer transition-all ${
+                              aspectRatio === '16:9' ? 'scale-110' : 'opacity-70 hover:opacity-100'
+                            }`}
                             onClick={() => setAspectRatio('16:9')}
                           >
-                            <div className="aspect-video bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex items-center justify-center w-40 border-2 
-                              border-gray-200 shadow-md">
-                              <VideoIcon className="h-8 w-8 text-pixar-blue opacity-50" />
+                            <div className="aspect-video bg-gray-100 rounded-md overflow-hidden flex items-center justify-center w-40 border-2 border-gray-200">
+                              <VideoIcon className="h-8 w-8 text-gray-400" />
                             </div>
-                            {aspectRatio === '16:9' && (
-                              <div className="absolute -top-2 -right-2 bg-pixar-blue text-white rounded-full p-1">
-                                <Check className="h-4 w-4" />
-                              </div>
-                            )}
                           </div>
                           <div className="flex items-center">
-                            <input 
-                              type="radio" 
+                            <RadioGroupItem 
+                              value="16:9" 
                               id="ratio-landscape"
-                              checked={aspectRatio === '16:9'}
-                              onChange={() => setAspectRatio('16:9')}
-                              className="sr-only"
+                              className="h-3.5 w-3.5 text-pixar-orange"
                             />
-                            <Label htmlFor="ratio-landscape" className="font-medium cursor-pointer">
-                              Landscape (16:9)
-                              <p className="text-xs text-muted-foreground">Best for YouTube, TV</p>
-                            </Label>
+                            <Label htmlFor="ratio-landscape" className="ml-2 font-medium">Landscape (16:9)</Label>
                           </div>
                         </div>
                         
-                        <div className="flex flex-col items-center space-y-3">
+                        <div className="flex flex-col items-center space-y-2">
                           <div 
-                            className={`relative cursor-pointer transition-all 
-                              ${aspectRatio === '9:16' ? 'scale-110' : 'opacity-70 hover:opacity-100'}`}
+                            className={`relative cursor-pointer transition-all ${
+                              aspectRatio === '9:16' ? 'scale-110' : 'opacity-70 hover:opacity-100'
+                            }`}
                             onClick={() => setAspectRatio('9:16')}
                           >
-                            <div className="w-[90px] aspect-[9/16] bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg overflow-hidden flex items-center justify-center border-2 
-                              border-gray-200 shadow-md">
-                              <Smartphone className="h-7 w-7 text-pixar-purple opacity-50" />
-                            </div>
-                            {aspectRatio === '9:16' && (
-                              <div className="absolute -top-2 -right-2 bg-pixar-blue text-white rounded-full p-1">
-                                <Check className="h-4 w-4" />
+                            <div className="relative w-20">
+                              <div className="aspect-[9/16] bg-gray-100 rounded-md overflow-hidden flex items-center justify-center border-2 border-gray-200">
+                                <Smartphone className="h-7 w-7 text-gray-400" />
                               </div>
-                            )}
+                            </div>
                           </div>
                           <div className="flex items-center">
-                            <input 
-                              type="radio" 
-                              id="ratio-portrait" 
-                              checked={aspectRatio === '9:16'}
-                              onChange={() => setAspectRatio('9:16')}
-                              className="sr-only"
+                            <RadioGroupItem 
+                              value="9:16" 
+                              id="ratio-portrait"
+                              className="h-3.5 w-3.5 text-pixar-orange"
                             />
-                            <Label htmlFor="ratio-portrait" className="font-medium cursor-pointer">
-                              Portrait (9:16)
-                              <p className="text-xs text-muted-foreground">Best for mobile, TikTok</p>
-                            </Label>
+                            <Label htmlFor="ratio-portrait" className="ml-2 font-medium">Portrait (9:16)</Label>
                           </div>
                         </div>
-                      </div>
+                      </RadioGroup>
                     </div>
                   </CardContent>
                 </Card>
@@ -724,55 +690,36 @@ const StoryReview = () => {
                       Animation Preview
                     </CardTitle>
                     <CardDescription className="text-gray-500">
-                      See how your animation might appear with selected settings
+                      See how your animation might appear
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex flex-col items-center justify-center p-6">
                     <div 
-                      className={`
-                        ${aspectRatio === '16:9' ? 'aspect-video w-full' : 'aspect-[9/16] w-2/3'}
-                        bg-gradient-to-br from-gray-50 to-gray-100 rounded-lg shadow-md overflow-hidden flex items-center justify-center mb-6 border border-gray-200
-                      `}
+                      className={`${
+                        aspectRatio === '16:9' ? 'aspect-video w-full' : 'aspect-[9/16] w-2/3'
+                      } bg-gray-100 rounded-lg shadow-md overflow-hidden flex items-center justify-center mb-4 border border-gray-200`}
                     >
                       <div className="text-center p-6">
                         <Film className="mx-auto h-12 w-12 text-gray-400 mb-3" />
                         <p className="text-gray-500 font-medium">Preview will be generated soon</p>
                         <p className="text-xs text-muted-foreground mt-2">
-                          Your animation will use the {colorPalettes.find(p => p.id === colorPalette)?.name || 'Auto'} color palette
+                          Your animation will use the {colorPalette} color palette
                         </p>
                       </div>
                     </div>
                     
-                    <div className="w-full mt-6">
-                      <div className="flex items-center justify-between mb-3">
-                        <h4 className="text-sm font-medium text-gray-700">Scene Previews</h4>
-                        <span className="text-xs text-muted-foreground">{scenes.length} scenes total</span>
-                      </div>
-                      
-                      <div className="grid grid-cols-3 gap-2 w-full">
-                        {scenes.slice(0, 3).map((scene, index) => (
-                          <div 
-                            key={index} 
-                            className="aspect-video bg-gradient-to-br from-gray-50 to-gray-100 rounded-md overflow-hidden relative border border-gray-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
-                            onClick={() => setSelectedScene(scene.id)}
-                          >
-                            <div className="absolute inset-0 flex flex-col items-center justify-center p-2">
-                              <p className="text-xs font-medium bg-white/70 backdrop-blur-sm py-1 px-2 rounded-full shadow-sm">Scene {index + 1}</p>
-                              <p className="text-[10px] text-center text-gray-500 mt-1 line-clamp-2 hidden sm:block">
-                                {scene.text.substring(0, 30)}...
-                              </p>
-                            </div>
+                    <div className="grid grid-cols-3 gap-2 w-full mt-4">
+                      {scenes.slice(0, 3).map((scene, index) => (
+                        <div key={index} className="aspect-video bg-gray-100 rounded-md overflow-hidden relative border border-gray-200">
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <p className="text-xs text-muted-foreground">Scene {index + 1}</p>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                   <CardFooter className="flex justify-center border-t pt-5 bg-gray-50">
-                    <Button 
-                      variant="outline" 
-                      className="border-gray-300 hover:bg-gray-100 transition-colors w-full flex items-center justify-center" 
-                      onClick={() => setShowPreview(true)}
-                    >
+                    <Button variant="outline" className="border-gray-300 hover:bg-gray-100 transition-colors w-full" onClick={() => setShowPreview(true)}>
                       <Play className="mr-2 h-4 w-4" />
                       Open Full Preview
                     </Button>
@@ -784,7 +731,7 @@ const StoryReview = () => {
             {/* Generate Button */}
             <motion.div 
               className="flex justify-end gap-4 mt-8"
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.03 }}
               transition={{ type: "spring", stiffness: 400, damping: 10 }}
             >
               <Button 
@@ -797,7 +744,7 @@ const StoryReview = () => {
               </Button>
               <Button 
                 onClick={handleGenerate}
-                className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple pixar-button rounded-xl py-6 px-8 text-lg font-medium shadow-lg hover:shadow-xl transition-all"
+                className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple pixar-button rounded-xl py-6 text-lg font-medium shadow-lg hover:shadow-xl"
               >
                 Generate Animation
                 <ArrowRight className="ml-2 h-5 w-5" />
@@ -820,7 +767,7 @@ const StoryReview = () => {
           <div 
             className={`${
               aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16] max-w-xs mx-auto'
-            } bg-gradient-to-br from-gray-50 to-gray-100 rounded-md overflow-hidden flex items-center justify-center border border-gray-200`}
+            } bg-gray-100 rounded-md overflow-hidden flex items-center justify-center border border-gray-200`}
           >
             <div className="text-center">
               <Film className="mx-auto h-12 w-12 text-gray-400 mb-2" />
