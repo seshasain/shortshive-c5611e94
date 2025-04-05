@@ -1,12 +1,18 @@
-
 import React from 'react';
 import { Button } from "@/components/ui/button";
 import { motion } from 'framer-motion';
 import { Play, ArrowRight, Sparkles, FileText, Rocket } from 'lucide-react';
+import { useTheme } from '@/lib/theme';
 
 const Hero = () => {
+  const { theme } = useTheme();
+  
   return (
-    <div className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50 pt-16 pb-20 md:pt-24 md:pb-28">
+    <div className={`relative overflow-hidden pt-16 pb-20 md:pt-24 md:pb-28 ${
+      theme === 'dark' 
+        ? 'bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900' 
+        : 'bg-gradient-to-br from-blue-50 via-purple-50 to-teal-50'
+    }`}>
       {/* Enhanced animated background elements */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
         <motion.div 
@@ -49,10 +55,16 @@ const Hero = () => {
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 0.2 }}
             >
-              <div className="inline-block mb-4 px-4 py-2 rounded-full bg-white/80 shadow-sm backdrop-blur-sm">
+              <div className={`inline-block mb-4 px-4 py-2 rounded-full shadow-sm backdrop-blur-sm ${
+                theme === 'dark' 
+                  ? 'bg-gray-800/80' 
+                  : 'bg-white/80'
+              }`}>
                 <div className="flex items-center space-x-2">
                   <Sparkles className="h-5 w-5 text-pixar-orange" />
-                  <span className="text-sm font-medium text-gray-800">AI-Powered Animation Platform</span>
+                  <span className={`text-sm font-medium ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                  }`}>AI-Powered Animation Platform</span>
                 </div>
               </div>
             </motion.div>
@@ -65,7 +77,7 @@ const Hero = () => {
             >
               <span className="pixar-text-gradient">Create Pixar-Level</span> 
               <br />
-              <span className="relative">
+              <span className={`relative ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>
                 Short Animations 
                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 300 12" xmlns="http://www.w3.org/2000/svg">
                   <path 
@@ -95,7 +107,9 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.6 }}
-              className="text-xl md:text-2xl text-gray-600 mb-8 max-w-2xl mx-auto lg:mx-0"
+              className={`text-xl md:text-2xl mb-8 max-w-2xl mx-auto lg:mx-0 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}
             >
               Transform your stories into stunning animated shorts with consistent characters, voiceovers, and subtitles.
             </motion.p>
@@ -115,7 +129,9 @@ const Hero = () => {
                 <span className="absolute inset-0 bg-gradient-to-r from-pixar-blue to-pixar-purple opacity-0 group-hover:opacity-100 transition-opacity duration-300"></span>
               </Button>
               
-              <Button variant="outline" className="text-lg flex items-center group relative overflow-hidden border-2 hover:border-pixar-orange hover:text-pixar-orange transition-colors">
+              <Button variant="outline" className={`text-lg flex items-center group relative overflow-hidden border-2 hover:border-pixar-orange hover:text-pixar-orange transition-colors ${
+                theme === 'dark' ? 'border-gray-700 text-gray-300' : ''
+              }`}>
                 <Play className="mr-2 h-5 w-5 text-pixar-orange group-hover:scale-110 transition-transform" />
                 Watch Examples
               </Button>
@@ -129,13 +145,13 @@ const Hero = () => {
             >
               <div className="flex -space-x-2">
                 {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className={`w-8 h-8 rounded-full border-2 border-white bg-gradient-to-br from-pixar-blue to-pixar-purple flex items-center justify-center text-white text-xs font-bold`}>
+                  <div key={i} className={`w-8 h-8 rounded-full border-2 ${theme === 'dark' ? 'border-gray-800' : 'border-white'} bg-gradient-to-br from-pixar-blue to-pixar-purple flex items-center justify-center text-white text-xs font-bold`}>
                     {String.fromCharCode(64 + i)}
                   </div>
                 ))}
               </div>
-              <div className="text-sm text-gray-600">
-                <span className="font-semibold text-gray-800">1,000+</span> animations created today
+              <div className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>
+                <span className={`font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-800'}`}>1,000+</span> animations created today
               </div>
             </motion.div>
           </motion.div>
@@ -147,7 +163,9 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="flex-1 relative"
           >
-            <div className="w-full aspect-video relative z-10 rounded-2xl overflow-hidden shadow-2xl border-4 border-white">
+            <div className={`w-full aspect-video relative z-10 rounded-2xl overflow-hidden shadow-2xl border-4 ${
+              theme === 'dark' ? 'border-gray-800' : 'border-white'
+            }`}>
               <div className="absolute inset-0 bg-gradient-to-br from-pixar-blue/90 to-pixar-purple/90 mix-blend-soft-light"></div>
               <div className="absolute inset-0 flex items-center justify-center">
                 <motion.div
@@ -171,7 +189,11 @@ const Hero = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 1 }}
-              className="absolute -bottom-6 -left-6 bg-white rounded-xl shadow-lg p-3 z-20 border border-gray-100"
+              className={`absolute -bottom-6 -left-6 rounded-xl shadow-lg p-3 z-20 ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-100'
+              }`}
             >
               <motion.div 
                 animate={{ y: [0, -5, 0] }} 
@@ -180,8 +202,8 @@ const Hero = () => {
               >
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pixar-red to-pixar-orange flex items-center justify-center text-white font-bold">A</div>
                 <div className="text-left">
-                  <p className="text-xs text-gray-500">Character</p>
-                  <p className="font-semibold">Adventure Amy</p>
+                  <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Character</p>
+                  <p className={`font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>Adventure Amy</p>
                 </div>
               </motion.div>
             </motion.div>
@@ -190,7 +212,11 @@ const Hero = () => {
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 1.2 }}
-              className="absolute -top-4 -right-4 bg-white rounded-xl shadow-lg p-3 z-20 border border-gray-100"
+              className={`absolute -top-4 -right-4 rounded-xl shadow-lg p-3 z-20 ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-100'
+              }`}
             >
               <motion.div 
                 animate={{ y: [0, -5, 0] }} 
@@ -198,83 +224,68 @@ const Hero = () => {
                 className="flex items-center space-x-2"
               >
                 <div className="text-right">
-                  <p className="text-xs text-gray-500">Voice</p>
-                  <p className="font-semibold">English (US)</p>
+                  <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Scene</p>
+                  <p className={`font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>Forest Adventure</p>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pixar-green to-pixar-teal flex items-center justify-center text-white">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                    <path fillRule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z" clipRule="evenodd" />
-                  </svg>
-                </div>
+                <FileText className="w-6 h-6 text-pixar-purple" />
               </motion.div>
             </motion.div>
             
+            {/* Stats card */}
             <motion.div 
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.6, delay: 1.4 }}
-              className="absolute top-1/2 -right-6 transform -translate-y-1/2 bg-white rounded-xl shadow-lg p-3 z-20 border border-gray-100"
+              className={`absolute top-1/2 -right-4 transform -translate-y-1/2 rounded-lg shadow-lg p-3 z-20 ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-100'
+              }`}
             >
               <motion.div 
                 animate={{ y: [0, -5, 0] }} 
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-                className="flex items-center space-x-2"
               >
-                <div className="text-right">
-                  <p className="text-xs text-gray-500">Scene</p>
-                  <p className="font-semibold">Forest Adventure</p>
+                <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Progress</p>
+                <div className="w-48 bg-gray-200 rounded-full h-2.5 my-2 dark:bg-gray-700">
+                  <div className="bg-pixar-teal h-2.5 rounded-full w-[70%]"></div>
                 </div>
-                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-pixar-purple to-pixar-blue flex items-center justify-center text-white">
-                  <FileText className="h-5 w-5" />
-                </div>
+                <p className={`text-xs font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>70% Complete</p>
               </motion.div>
             </motion.div>
           </motion.div>
         </div>
-        
-        {/* Trusted By Section with animation */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.4 }}
-          className="mt-20 text-center"
-        >
-          <p className="text-gray-500 mb-6">Trusted by storytellers and creators worldwide</p>
-          <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-70">
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              className="h-8"
-            >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/0/08/Netflix_2015_logo.svg/1920px-Netflix_2015_logo.svg.png" 
-                alt="Netflix" className="h-full grayscale hover:grayscale-0 transition-all duration-300" />
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              className="h-8"
-            >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Pixar_logo.svg/1200px-Pixar_logo.svg.png" 
-                alt="Pixar" className="h-full grayscale hover:grayscale-0 transition-all duration-300" />
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              className="h-8"
-            >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Pixar_Animation_Studios.svg/440px-Pixar_Animation_Studios.svg.png" 
-                alt="Pixar Animation" className="h-full grayscale hover:grayscale-0 transition-all duration-300" />
-            </motion.div>
-            <motion.div 
-              whileHover={{ scale: 1.05 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-              className="h-8"
-            >
-              <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/AMD_Logo.svg/1200px-AMD_Logo.svg.png" 
-                alt="AMD" className="h-full grayscale hover:grayscale-0 transition-all duration-300" />
-            </motion.div>
+      </div>
+      
+      {/* Added Stats section */}
+      <div className={`mt-20 py-10 relative z-10 ${
+        theme === 'dark' ? 'bg-gray-800/50' : 'bg-white/50'
+      } backdrop-blur-sm`}>
+        <div className="container-custom">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+            {[
+              { label: "Active Users", value: "10,000+", icon: "👥" },
+              { label: "Animations Created", value: "250,000+", icon: "🎬" },
+              { label: "Positive Reviews", value: "99.8%", icon: "⭐" },
+              { label: "Average Render Time", value: "60 sec", icon: "⚡" }
+            ].map((stat, index) => (
+              <motion.div
+                key={stat.label}
+                initial={{ y: 20, opacity: 0 }}
+                whileInView={{ y: 0, opacity: 1 }}
+                transition={{ delay: index * 0.1 }}
+                viewport={{ once: true }}
+                className="px-4 py-6"
+              >
+                <div className="text-3xl mb-1">{stat.icon}</div>
+                <h4 className={`text-2xl sm:text-3xl font-bold mb-1 ${
+                  theme === 'dark' ? 'text-white' : 'text-gray-900'
+                }`}>{stat.value}</h4>
+                <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</p>
+              </motion.div>
+            ))}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

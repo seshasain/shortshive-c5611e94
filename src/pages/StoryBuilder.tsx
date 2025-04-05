@@ -18,6 +18,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { useTheme } from '@/lib/theme';
 
 const emotions = [
   { name: 'Happy', color: '#FFD166', icon: <Smile className="h-3 w-3" /> },
@@ -60,6 +61,7 @@ const StoryBuilder = React.memo(() => {
   const [duration, setDuration] = useState('60');
   const [currentExample, setCurrentExample] = useState(0);
   const [addHook, setAddHook] = useState(true);
+  const { theme } = useTheme();
   
   // Add a state to track if user is scrolling
   const [isScrolling, setIsScrolling] = useState(false);
@@ -109,8 +111,12 @@ const StoryBuilder = React.memo(() => {
           onClick={() => setSelectedEmotion(emotion.name)}
           className={`px-3 py-2 rounded-full text-sm ${
             selectedEmotion === emotion.name
-              ? 'bg-gray-800 text-white font-medium shadow-md'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              ? theme === 'dark'
+                ? 'bg-gray-700 text-white font-medium shadow-md'
+                : 'bg-gray-800 text-white font-medium shadow-md'
+              : theme === 'dark'
+                ? 'bg-gray-800 text-gray-300 hover:bg-gray-700'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
         >
           <div className="flex items-center gap-1.5">
@@ -123,7 +129,7 @@ const StoryBuilder = React.memo(() => {
         </button>
       ))}
     </div>
-  ), [selectedEmotion, setSelectedEmotion]);
+  ), [selectedEmotion, setSelectedEmotion, theme]);
   
   // Enhance scroll optimization - pause animations during scroll
   useEffect(() => {
@@ -200,17 +206,17 @@ const StoryBuilder = React.memo(() => {
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-block mb-3 px-4 py-2 rounded-full bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10"
+              className={`inline-block mb-3 px-4 py-2 rounded-full ${theme === 'dark' ? 'bg-gray-800 shadow-lg backdrop-blur-sm border border-gray-700' : 'bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10'}`}
             >
               <div className="flex items-center space-x-2">
                 <Sparkles className="h-5 w-5 text-pixar-purple" />
-                <span className="text-sm font-medium text-gray-700">Create Your Story</span>
+                <span className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Create Your Story</span>
               </div>
             </motion.div>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight">
               Story Builder
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl">
+            <p className={`text-lg ${theme === 'dark' ? 'text-gray-300' : 'text-muted-foreground'} max-w-xl`}>
               Craft your story with our intuitive editor or AI-powered generator
             </p>
           </div>
@@ -219,16 +225,16 @@ const StoryBuilder = React.memo(() => {
         <div className="grid grid-cols-12 gap-6">
           {/* Main Content Area - 8 columns */}
           <div className="col-span-12 lg:col-span-8 space-y-6">
-            <Card className="border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg">
-              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent">
+            <Card className={`${theme === 'dark' ? 'border-gray-700 bg-gray-800/80 backdrop-blur-sm shadow-lg' : 'border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg'}`}>
+              <CardHeader className={`${theme === 'dark' ? 'border-b border-gray-700 bg-gradient-to-r from-gray-800/80 to-transparent' : 'border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent'}`}>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="p-2 bg-pixar-blue/5 rounded-lg">
+                    <div className={`p-2 ${theme === 'dark' ? 'bg-pixar-blue/20' : 'bg-pixar-blue/5'} rounded-lg`}>
                       <VideoIcon className="h-5 w-5 text-pixar-blue" />
                     </div>
                     <div>
-                      <CardTitle className="text-lg font-semibold">Story Creation</CardTitle>
-                      <CardDescription className="text-sm text-gray-500">
+                      <CardTitle className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : ''}`}>Story Creation</CardTitle>
+                      <CardDescription className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                         Choose your preferred method to create your story
                       </CardDescription>
                     </div>
@@ -237,10 +243,10 @@ const StoryBuilder = React.memo(() => {
               </CardHeader>
               <CardContent className="p-6">
                 <Tabs defaultValue="generate" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2 bg-gray-100/80 p-1 rounded-lg h-11">
+                  <TabsList className={`grid w-full grid-cols-2 ${theme === 'dark' ? 'bg-gray-700/80' : 'bg-gray-100/80'} p-1 rounded-lg h-11`}>
                     <TabsTrigger 
                       value="generate" 
-                      className="rounded-md ring-offset-white transition-all data-[state=active]:bg-white data-[state=active]:text-pixar-blue data-[state=active]:shadow-sm"
+                      className={`rounded-md transition-all ${theme === 'dark' ? 'ring-offset-gray-900 data-[state=active]:bg-gray-600 data-[state=active]:text-pixar-blue data-[state=active]:shadow-sm' : 'ring-offset-white data-[state=active]:bg-white data-[state=active]:text-pixar-blue data-[state=active]:shadow-sm'}`}
                     >
                       <div className="flex items-center gap-2">
                         <Sparkles className="h-4 w-4" />
@@ -249,7 +255,7 @@ const StoryBuilder = React.memo(() => {
                     </TabsTrigger>
                     <TabsTrigger 
                       value="manual" 
-                      className="rounded-md ring-offset-white transition-all data-[state=active]:bg-white data-[state=active]:text-pixar-blue data-[state=active]:shadow-sm"
+                      className={`rounded-md transition-all ${theme === 'dark' ? 'ring-offset-gray-900 data-[state=active]:bg-gray-600 data-[state=active]:text-pixar-blue data-[state=active]:shadow-sm' : 'ring-offset-white data-[state=active]:bg-white data-[state=active]:text-pixar-blue data-[state=active]:shadow-sm'}`}
                     >
                       <div className="flex items-center gap-2">
                         <Heart className="h-4 w-4" />
@@ -259,26 +265,26 @@ const StoryBuilder = React.memo(() => {
                   </TabsList>
 
                   <TabsContent value="generate" className="mt-6 outline-none">
-                    <div className="bg-gradient-to-br from-pixar-blue/5 to-pixar-purple/5 rounded-xl p-6 border border-pixar-blue/10 shadow-sm">
+                    <div className={`${theme === 'dark' ? 'bg-gradient-to-br from-pixar-blue/10 to-pixar-purple/10 rounded-xl p-6 border border-gray-700 shadow-sm' : 'bg-gradient-to-br from-pixar-blue/5 to-pixar-purple/5 rounded-xl p-6 border border-pixar-blue/10 shadow-sm'}`}>
                       <h3 className="font-semibold text-pixar-blue flex items-center mb-3 text-lg">
                         <Sparkles className="h-5 w-5 mr-2" />
                         AI Story Generator
                       </h3>
-                      <p className="text-muted-foreground mb-6">
+                      <p className={`${theme === 'dark' ? 'text-gray-400' : 'text-muted-foreground'} mb-6`}>
                         Enter a simple prompt and let our AI create a complete story for you.
                       </p>
 
                       <div className="space-y-5">
                         <div>
-                          <Label htmlFor="story-prompt" className="text-sm font-medium mb-2 block">Your Story Idea</Label>
+                          <Label htmlFor="story-prompt" className={`text-sm font-medium mb-2 block ${theme === 'dark' ? 'text-gray-300' : ''}`}>Your Story Idea</Label>
                           <Input
                             id="story-prompt"
                             value={promptInput}
                             onChange={(e) => setPromptInput(e.target.value)}
                             placeholder={storyPromptExamples[currentExample]}
-                            className="border-pixar-blue/20 focus:border-pixar-blue transition-all duration-300 shadow-sm text-base"
+                            className={`${theme === 'dark' ? 'bg-gray-700 border-gray-600 focus:border-pixar-blue text-gray-200' : 'border-pixar-blue/20 focus:border-pixar-blue'} transition-all duration-300 shadow-sm text-base`}
                           />
-                          <p className="text-xs text-muted-foreground mt-2">
+                          <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-muted-foreground'} mt-2`}>
                             Example: "{storyPromptExamples[currentExample]}"
                           </p>
                         </div>
@@ -286,9 +292,9 @@ const StoryBuilder = React.memo(() => {
                     </div>
 
                     <div className="px-2">
-                      <div className="flex items-start p-4 rounded-xl bg-amber-50 border border-amber-100">
+                      <div className={`flex items-start p-4 rounded-xl ${theme === 'dark' ? 'bg-amber-900/20 border border-amber-800/50' : 'bg-amber-50 border border-amber-100'}`}>
                         <Wand2 className="h-6 w-6 text-pixar-orange mr-3 mt-0.5 flex-shrink-0" />
-                        <p className="text-sm text-gray-700">
+                        <p className={`text-sm ${theme === 'dark' ? 'text-amber-200' : 'text-gray-700'}`}>
                           Our AI will transform your prompt into a complete story with scenes, characters, and dialogue.
                         </p>
                       </div>
@@ -297,22 +303,22 @@ const StoryBuilder = React.memo(() => {
 
                   <TabsContent value="manual" className="space-y-4 mt-2">
                     <div>
-                      <Label htmlFor="manual-story" className="flex items-center text-lg mb-2">
+                      <Label htmlFor="manual-story" className={`flex items-center text-lg mb-2 ${theme === 'dark' ? 'text-gray-300' : ''}`}>
                         <Heart className="mr-2 h-5 w-5 text-pixar-red" />
                         Your Story
                       </Label>
                       <Textarea 
                         id="manual-story" 
                         placeholder="Once upon a time..." 
-                        className="min-h-[300px] mt-1.5 border-pixar-blue/20 focus:border-pixar-blue shadow-sm text-base"
+                        className={`min-h-[300px] mt-1.5 ${theme === 'dark' ? 'bg-gray-700 border-gray-600 focus:border-pixar-blue text-gray-200' : 'border-pixar-blue/20 focus:border-pixar-blue'} shadow-sm text-base`}
                         value={storyInput}
                         onChange={(e) => setStoryInput(e.target.value)}
                       />
                       <div className="flex justify-between items-center mt-3">
-                        <p className="text-sm text-muted-foreground">
+                        <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-muted-foreground'}`}>
                           Write your story in detail for the best animation results.
                         </p>
-                        <Badge variant="secondary" className="bg-pixar-blue/10 text-pixar-blue">
+                        <Badge variant="secondary" className={`${theme === 'dark' ? 'bg-pixar-blue/20' : 'bg-pixar-blue/10'} text-pixar-blue`}>
                           {storyInput.length} characters
                         </Badge>
                       </div>
@@ -335,15 +341,15 @@ const StoryBuilder = React.memo(() => {
 
           {/* Settings Panel - 4 columns */}
           <div className="col-span-12 lg:col-span-4 space-y-6">
-            <Card className="border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg sticky top-24">
-              <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent">
+            <Card className={`${theme === 'dark' ? 'border-gray-700 bg-gray-800/80 backdrop-blur-sm shadow-lg' : 'border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg'} sticky top-24`}>
+              <CardHeader className={`${theme === 'dark' ? 'border-b border-gray-700 bg-gradient-to-r from-gray-800/80 to-transparent' : 'border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent'}`}>
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-pixar-blue/5 rounded-lg">
+                  <div className={`p-2 ${theme === 'dark' ? 'bg-pixar-blue/20' : 'bg-pixar-blue/5'} rounded-lg`}>
                     <Settings className="h-5 w-5 text-pixar-blue" />
                   </div>
                   <div>
-                    <CardTitle className="text-lg font-semibold">Story Settings</CardTitle>
-                    <CardDescription className="text-sm text-gray-500">
+                    <CardTitle className={`text-lg font-semibold ${theme === 'dark' ? 'text-white' : ''}`}>Story Settings</CardTitle>
+                    <CardDescription className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>
                       Customize your story's characteristics
                     </CardDescription>
                   </div>
@@ -352,7 +358,7 @@ const StoryBuilder = React.memo(() => {
               <CardContent className="space-y-6 p-6">
                 {/* Emotion Selection */}
                 <div>
-                  <Label className="block mb-3 flex items-center font-medium">
+                  <Label className={`block mb-3 flex items-center font-medium ${theme === 'dark' ? 'text-gray-300' : ''}`}>
                     <Heart className="mr-2 h-4 w-4 text-pixar-red" />
                     Primary Emotion
                   </Label>
@@ -365,7 +371,9 @@ const StoryBuilder = React.memo(() => {
                         className={`min-w-[80px] h-9 rounded-lg text-sm flex items-center justify-center transition-all duration-200 ${
                           selectedEmotion === emotion.name
                             ? 'bg-pixar-blue text-white shadow-sm'
-                            : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
+                            : theme === 'dark'
+                              ? 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                              : 'bg-gray-50 text-gray-700 hover:bg-gray-100'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 px-2">
@@ -381,13 +389,17 @@ const StoryBuilder = React.memo(() => {
                 </div>
 
                 {/* Hook Option */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-pixar-blue/5 to-transparent border border-pixar-blue/10">
+                <div className={`flex items-center justify-between p-4 rounded-xl ${
+                  theme === 'dark'
+                    ? 'bg-gradient-to-r from-pixar-blue/10 to-transparent border border-gray-700'
+                    : 'bg-gradient-to-r from-pixar-blue/5 to-transparent border border-pixar-blue/10'
+                }`}>
                   <div className="space-y-0.5">
-                    <Label className="text-base flex items-center font-medium">
+                    <Label className={`text-base flex items-center font-medium ${theme === 'dark' ? 'text-gray-200' : ''}`}>
                       <Anchor className="mr-2 h-4 w-4 text-pixar-blue" />
                       Attention Hook
                     </Label>
-                    <p className="text-sm text-muted-foreground">
+                    <p className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-muted-foreground'}`}>
                       Add an engaging intro
                     </p>
                   </div>

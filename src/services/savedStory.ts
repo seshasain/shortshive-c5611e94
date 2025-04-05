@@ -2,12 +2,12 @@ import { supabase } from '@/lib/auth';
 
 export interface SavedStoryData {
   id: string;
-  storyId: string;
+  story_id: string;
   status: 'DRAFT' | 'COMPLETED';
-  generationState?: any;
+  generation_state?: any;
   notes?: string;
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 // Save a story
@@ -20,11 +20,10 @@ export const saveStory = async (
     const { data, error } = await supabase
       .from('saved_stories')
       .upsert({
-        storyId,
+        story_id: storyId,
         status: 'DRAFT',
-        generationState,
-        notes,
-        updatedAt: new Date().toISOString()
+        generation_state: generationState,
+        notes
       })
       .select()
       .single();
@@ -48,7 +47,7 @@ export const checkSavedStory = async (
         *,
         story:stories(*)
       `)
-      .eq('storyId', storyId)
+      .eq('story_id', storyId)
       .single();
 
     if (error) throw error;
@@ -67,10 +66,10 @@ export const resumeSavedStory = async (
     const { data, error } = await supabase
       .from('saved_stories')
       .select(`
-        generationState,
+        generation_state,
         story:stories(*)
       `)
-      .eq('storyId', storyId)
+      .eq('story_id', storyId)
       .single();
 
     if (error) throw error;
@@ -78,7 +77,7 @@ export const resumeSavedStory = async (
 
     return { 
       data: {
-        generationState: data.generationState,
+        generationState: data.generation_state,
         story: data.story
       }, 
       error: null 

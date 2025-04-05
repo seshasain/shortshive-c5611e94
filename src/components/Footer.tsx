@@ -2,8 +2,11 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ArrowRight, ExternalLink } from 'lucide-react';
+import { useTheme } from '@/lib/theme';
 
 const Footer = () => {
+  const { theme } = useTheme();
+  
   // Function to handle navigation safely
   const handleNavigation = (e: React.MouseEvent<HTMLAnchorElement>, path: string) => {
     e.preventDefault();
@@ -27,7 +30,9 @@ const Footer = () => {
   };
 
   return (
-    <footer className="bg-gray-50 pt-16 pb-8 relative overflow-hidden">
+    <footer className={`pt-16 pb-8 relative overflow-hidden ${
+      theme === 'dark' ? 'bg-gray-900' : 'bg-gray-50'
+    }`}>
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <motion.div 
@@ -70,7 +75,9 @@ const Footer = () => {
               </motion.div>
               <span className="font-bold text-2xl pixar-text-gradient">PixarifyAI</span>
             </Link>
-            <p className="text-gray-600 mb-6 max-w-md">
+            <p className={`mb-6 max-w-md ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}>
               Transform your stories into stunning Pixar-quality animations with our AI-powered platform. Create, customize, and share in minutes.
             </p>
             <div className="flex space-x-4">
@@ -82,7 +89,11 @@ const Footer = () => {
                   transition={{ type: "spring", stiffness: 400, damping: 10 }}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 hover:bg-pixar-blue hover:text-white transition-colors"
+                  className={`w-10 h-10 rounded-full flex items-center justify-center hover:bg-pixar-blue hover:text-white transition-colors ${
+                    theme === 'dark' 
+                      ? 'bg-gray-800 text-gray-400' 
+                      : 'bg-gray-200 text-gray-600'
+                  }`}
                 >
                   <span className="sr-only">{social}</span>
                   <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -97,18 +108,21 @@ const Footer = () => {
             title="Product"
             items={['Features', 'Pricing', 'Examples', 'Templates', 'Character Library']}
             variants={itemVariants}
+            theme={theme}
           />
           
           <FooterColumn 
             title="Resources"
             items={['Documentation', 'Tutorials', 'Blog', 'Community', 'API']}
             variants={itemVariants}
+            theme={theme}
           />
           
           <FooterColumn 
             title="Company"
             items={['About', 'Careers', 'Contact', 'Legal', 'Press']}
             variants={itemVariants}
+            theme={theme}
           />
         </motion.div>
         
@@ -117,9 +131,13 @@ const Footer = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           viewport={{ once: true }}
-          className="pt-8 border-t border-gray-200 flex flex-col md:flex-row justify-between items-center"
+          className={`pt-8 flex flex-col md:flex-row justify-between items-center border-t ${
+            theme === 'dark' ? 'border-gray-800' : 'border-gray-200'
+          }`}
         >
-          <p className="text-gray-500 text-sm mb-4 md:mb-0">
+          <p className={`text-sm mb-4 md:mb-0 ${
+            theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+          }`}>
             &copy; {new Date().getFullYear()} PixarifyAI. All rights reserved.
           </p>
           <div className="flex space-x-6">
@@ -128,7 +146,9 @@ const Footer = () => {
                 key={item}
                 href={`/${item.toLowerCase().replace(/\s+/g, '-')}`} 
                 onClick={(e) => handleNavigation(e, `/${item.toLowerCase().replace(/\s+/g, '-')}`)}
-                className="text-gray-500 text-sm hover:text-pixar-blue transition-colors relative group"
+                className={`text-sm hover:text-pixar-blue transition-colors relative group ${
+                  theme === 'dark' ? 'text-gray-500' : 'text-gray-500'
+                }`}
                 whileHover={{ x: 2 }}
               >
                 {item}
@@ -143,13 +163,16 @@ const Footer = () => {
 };
 
 // Helper component for footer columns
-const FooterColumn = ({ title, items, variants }: { 
+const FooterColumn = ({ title, items, variants, theme }: { 
   title: string, 
   items: string[],
-  variants: any
+  variants: any,
+  theme: 'light' | 'dark'
 }) => (
   <motion.div variants={variants}>
-    <h3 className="font-bold text-lg mb-4 relative inline-block">
+    <h3 className={`font-bold text-lg mb-4 relative inline-block ${
+      theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+    }`}>
       {title}
       <motion.div
         className="absolute -bottom-1 left-0 h-0.5 w-0 bg-pixar-blue"
@@ -169,7 +192,9 @@ const FooterColumn = ({ title, items, variants }: {
           <a 
             href={`/${item.toLowerCase()}`} 
             onClick={(e) => e.preventDefault()}
-            className="text-gray-600 hover:text-pixar-blue transition-colors flex items-center group"
+            className={`hover:text-pixar-blue transition-colors flex items-center group ${
+              theme === 'dark' ? 'text-gray-400' : 'text-gray-600'
+            }`}
           >
             <span>{item}</span>
             <motion.span

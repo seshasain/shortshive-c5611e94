@@ -20,6 +20,7 @@ import StoryLoadingAnimation from '@/components/StoryLoadingAnimation';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from '@/lib/auth';
 
 const mockScenes = [
  
@@ -60,7 +61,7 @@ const StoryReview = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  const { id: storyId } = useParams();
+  const [storyId, setStoryId] = useState<string | undefined>(useParams().id);
   
   // Default values for when there's no state
   const [storyText, setStoryText] = useState("");
@@ -70,7 +71,7 @@ const StoryReview = () => {
   const [selectedScene, setSelectedScene] = useState<string | null>(null);
   const [showPreview, setShowPreview] = useState(false);
   const [aspectRatio, setAspectRatio] = useState('16:9');
-  const [colorPalette, setColorPalette] = useState('auto');
+  const [colorPalette, setColorPalette] = useState('pixar');
   const [activeTab, setActiveTab] = useState('story');
   const [isLoading, setIsLoading] = useState(false);
   const [storyTitle, setStoryTitle] = useState('');
@@ -185,16 +186,30 @@ const StoryReview = () => {
       if (data) {
         setHasSavedState(true);
         // If there's generation state, restore it
-        if (data.generationState) {
-          setStoryTitle(data.generationState.title || '');
-          setStoryText(data.generationState.storyContent || '');
-          setScenes(data.generationState.scenes || []);
-          setColorPalette(data.generationState.visualSettings?.colorPalette || 'auto');
-          setAspectRatio(data.generationState.visualSettings?.aspectRatio || '16:9');
+        if (data.generation_state) {
+          const savedData = data.generation_state;
+          setStoryTitle(savedData.title || '');
+          setStoryText(savedData.logline || '');
+          
+          // Convert the scenes from the saved format to our Scene interface
+          if (savedData.scenes && Array.isArray(savedData.scenes)) {
+            const mappedScenes = savedData.scenes.map((scene, index) => ({
+              id: String(scene.sceneNumber || index + 1),
+              text: scene.dialogueOrNarration || '',
+              visualDescription: scene.visualDescription || '',
+              image: `https://source.unsplash.com/random/500x400?story=${index + 1}`
+            }));
+            setScenes(mappedScenes);
+          }
+          
+          // Set visual settings if available, otherwise use defaults
+          if (savedData.settings) {
+            // You could map from emotion to color palette here if needed
+          }
           
           toast({
             title: 'Story loaded',
-            description: 'Successfully loaded your saved story.',
+            description: 'Successfully loaded your saved story. You can now edit it and generate a video.',
             variant: 'default',
           });
         }
@@ -213,8 +228,14 @@ const StoryReview = () => {
     try {
       // Prepare the animation data
       const animationData = {
+        story_id: storyId,
         storyContent: storyText,
-        scenes: scenes,
+        scenes: scenes.map(scene => ({
+          sceneNumber: parseInt(scene.id),
+          dialogueOrNarration: scene.text,
+          visualDescription: scene.visualDescription || `A scene showing: ${scene.text.substring(0, 100)}...`,
+          durationEstimate: 10 // Default duration in seconds
+        })),
         visualSettings: {
           colorPalette,
           aspectRatio
@@ -230,9 +251,9 @@ const StoryReview = () => {
           storyId,
           {
             title: storyTitle,
-            storyContent: storyText,
-            scenes,
-            visualSettings: {
+            logline: storyText,
+            scenes: animationData.scenes,
+            settings: {
               colorPalette,
               aspectRatio
             }
@@ -249,23 +270,42 @@ const StoryReview = () => {
         }
       }
 
-      // Proceed with generation
-      const response = await fetch('/api/generate-animation', {
+      // Send the request to the server API
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
+      const response = await fetch(`${API_URL}/api/generate-animation`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(animationData),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to generate animation');
+      const responseData = await response.json();
+
+      if (!response.ok || !responseData.success) {
+        throw new Error(responseData.error || 'Failed to generate animation');
       }
 
-      // If successful, navigate to generating page
-      navigate('/generating');
+      // If successful, navigate to generating page with the story ID and response data
+      navigate('/generating', { 
+        state: { 
+          storyId: responseData.storyId || storyId,
+          images: responseData.images,
+          title: storyTitle,
+          generationStarted: new Date().toISOString()
+        } 
+      });
+      
+      toast({
+        title: 'Generation started',
+        description: 'Your animation is being generated. You will be notified when it is ready.',
+        variant: 'default',
+      });
     } catch (error) {
       console.error('Error generating animation:', error);
       toast({
         title: 'Generation failed',
-        description: 'Could not generate the animation. Please try again.',
+        description: error.message || 'Could not generate the animation. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -280,50 +320,124 @@ const StoryReview = () => {
   };
   
   const handleSaveStory = () => {
-    // Show the save dialog
+    // Show the save dialog with appropriate name
     setSaveName(storyTitle || 'My Story');
     setSaveDialogOpen(true);
   };
   
-  const handleConfirmSave = () => {
-    // Get existing saved stories or initialize an empty array
-    const existingSavedStories = JSON.parse(localStorage.getItem('savedStories') || '[]');
+  const handleConfirmSave = async () => {
+    // Set the saving state
+    setIsSaving(true);
     
-    // Create story object to save
-    const storyToSave = {
-      id: Date.now().toString(),
-      title: saveName,
-      timestamp: new Date().toISOString(),
-      data: {
-        title: storyTitle,
-        logline: storyText,
-        scenes: scenes.map(scene => ({
-          sceneNumber: parseInt(scene.id),
-          durationEstimate: 10,
-          visualDescription: scene.visualDescription || '',
-          dialogueOrNarration: scene.text
-        })),
-        storyType,
-        originalPrompt: promptText,
-        colorPalette,
-        aspectRatio
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
       }
-    };
-    
-    // Add the new story to the array
-    existingSavedStories.push(storyToSave);
-    
-    // Save back to localStorage
-    localStorage.setItem('savedStories', JSON.stringify(existingSavedStories));
-    
-    // Close the dialog and show success message
-    setSaveDialogOpen(false);
-    setSaveSuccess(true);
-    
-    // Hide success message after 3 seconds
-    setTimeout(() => {
-      setSaveSuccess(false);
-    }, 3000);
+      
+      let storyIdToUse = storyId;
+      
+      // Only create a new story if we don't have an existing storyId
+      if (!storyIdToUse) {
+        // Create a new story
+        const { data: newStory, error: storyError } = await supabase
+          .from('stories')
+          .insert({
+            title: saveName,
+            description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
+            user_id: user.id
+          })
+          .select()
+          .single();
+        
+        if (storyError) throw storyError;
+        storyIdToUse = newStory.id;
+      } else {
+        // Update the existing story
+        const { error: updateError } = await supabase
+          .from('stories')
+          .update({
+            title: saveName,
+            description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : '')
+          })
+          .eq('id', storyIdToUse);
+        
+        if (updateError) throw updateError;
+      }
+      
+      // Format the data according to the required schema
+      const formattedScenes = scenes.map(scene => ({
+        sceneNumber: parseInt(scene.id),
+        durationEstimate: 10, // Default duration
+        visualDescription: scene.visualDescription || 'Visual description placeholder',
+        dialogueOrNarration: scene.text
+      }));
+
+      // Prepare the generation state to save in specified format
+      const generationState = {
+        title: storyTitle || saveName,
+        logline: storyText,
+        settings: {
+          emotion: "Neutral", // Default values if not specified
+          language: "English",
+          voiceStyle: "Conversational",
+          duration: formattedScenes.length * 10, // Rough estimate based on scenes
+          addHook: true
+        },
+        characters: [
+          // We could extract characters from the story, but for now use a placeholder
+          {
+            name: "Main Character",
+            description: "Character from the story"
+          }
+        ],
+        scenes: formattedScenes
+      };
+      
+      // Save to the saved_stories table
+      const { error: savedStoryError } = await saveStory(
+        storyIdToUse,
+        generationState,
+        `Updated on ${new Date().toLocaleString()}`
+      );
+      
+      if (savedStoryError) throw savedStoryError;
+      
+      // Close the dialog and show success message
+      setSaveDialogOpen(false);
+      setSaveSuccess(true);
+      
+      // Don't navigate away, just update the local state if needed
+      if (!storyId) {
+        // Update the storyId state to track the new story
+        setStoryId(storyIdToUse);
+        // Update the URL without full page navigation
+        navigate(`/review-story/${storyIdToUse}`, { replace: true });
+      }
+      
+      toast({
+        title: storyId ? "Story updated successfully" : "Story saved successfully",
+        description: storyId 
+          ? "Your story has been updated with the latest changes." 
+          : "Your story has been saved to your account.",
+        variant: "default",
+      });
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => {
+        setSaveSuccess(false);
+      }, 3000);
+    } catch (error) {
+      console.error('Error saving story:', error);
+      toast({
+        title: "Failed to save story",
+        description: "Please try again or contact support if the issue persists.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
   
   // Add resume functionality
@@ -344,14 +458,22 @@ const StoryReview = () => {
       // Restore the generation state
       const { generationState, story } = data;
       setStoryTitle(generationState.title || '');
-      setStoryText(generationState.storyContent || '');
-      setScenes(generationState.scenes || []);
-      setColorPalette(generationState.visualSettings?.colorPalette || 'auto');
-      setAspectRatio(generationState.visualSettings?.aspectRatio || '16:9');
+      setStoryText(generationState.logline || '');
+      
+      // Convert the scenes from the saved format to our Scene interface
+      if (generationState.scenes && Array.isArray(generationState.scenes)) {
+        const mappedScenes = generationState.scenes.map((scene, index) => ({
+          id: String(scene.sceneNumber || index + 1),
+          text: scene.dialogueOrNarration || '',
+          visualDescription: scene.visualDescription || '',
+          image: `https://source.unsplash.com/random/500x400?story=${index + 1}`
+        }));
+        setScenes(mappedScenes);
+      }
 
       toast({
         title: 'Story resumed',
-        description: 'Successfully restored your saved story.',
+        description: 'Successfully restored your saved story. You can now edit it and generate a video.',
         variant: 'default',
       });
     }
@@ -405,20 +527,7 @@ const StoryReview = () => {
               Review, edit, and customize your masterpiece before bringing it to life with animation
             </p>
           </div>
-          <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mt-6 md:mt-0">
-            <Button 
-              onClick={handleSaveStory}
-              variant="outline"
-              className="flex items-center border border-pixar-purple/20 text-pixar-purple hover:bg-pixar-purple/5 transition-all"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="mr-2 h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
-                <polyline points="17 21 17 13 7 13 7 21"></polyline>
-                <polyline points="7 3 7 8 15 8"></polyline>
-              </svg>
-              Save Story
-            </Button>
-          </div>
+          
         </motion.div>
         
         {/* Main Content */}
@@ -512,8 +621,21 @@ const StoryReview = () => {
                   </div>
                 </CardHeader>
                 <CardContent className="p-6">
+                  {/* Scene Cards */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 mb-6">
+                    {scenes.map((scene, index) => (
+                      <SceneCard 
+                        key={scene.id}
+                        scene={scene}
+                        index={index}
+                        onEdit={handleEditScene}
+                        delay={index * 0.1}
+                      />
+                    ))}
+                  </div>
+
                   {/* Visual Settings Section */}
-                  <div className="mb-6 p-4 bg-gray-50/80 rounded-lg border border-gray-100">
+                  <div className="p-4 bg-gray-50/80 rounded-lg border border-gray-100">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
                         <Settings className="h-4 w-4 text-pixar-blue" />
@@ -640,19 +762,6 @@ const StoryReview = () => {
                       </div>
                     </div>
                   </div>
-
-                  {/* Scene Cards */}
-                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
-                    {scenes.map((scene, index) => (
-                      <SceneCard 
-                        key={scene.id}
-                        scene={scene}
-                        index={index}
-                        onEdit={handleEditScene}
-                        delay={index * 0.1}
-                      />
-                    ))}
-                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -681,7 +790,7 @@ const StoryReview = () => {
                       <polyline points="17 21 17 13 7 13 7 21" />
                       <polyline points="7 3 7 8 15 8" />
                     </svg>
-                    Save Progress
+                    {storyId ? 'Update Story' : 'Save Story'}
                   </Button>
                   <Button 
                     onClick={handleGenerate}
@@ -705,7 +814,9 @@ const StoryReview = () => {
           >
             <div className="flex items-center gap-3">
               <Check className="h-5 w-5 text-emerald-500" />
-              <p className="font-medium">Story saved successfully!</p>
+              <p className="font-medium">
+                {storyId ? "Story updated successfully!" : "Story saved successfully!"}
+              </p>
             </div>
           </motion.div>
         )}
@@ -749,77 +860,49 @@ const StoryReview = () => {
         </DialogContent>
       </Dialog>
       
-      {/* Save Story Dialog */}
+      {/* Save Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent className="max-w-md bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10">
+        <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Save Your Story</DialogTitle>
+            <DialogTitle>{storyId ? 'Update Story' : 'Save New Story'}</DialogTitle>
             <DialogDescription>
-              Save your story to access it later from your library
+              {storyId 
+                ? 'Update your story with the latest changes.' 
+                : 'Enter a name for your story to save it for later.'}
             </DialogDescription>
           </DialogHeader>
-          
-          <div className="py-4">
-            <Label htmlFor="save-name" className="text-gray-700 mb-2 block font-medium">Story Name</Label>
-            <Input 
-              id="save-name"
-              value={saveName}
-              onChange={(e) => setSaveName(e.target.value)}
-              placeholder="Enter a name for your story"
-              className="border-pixar-blue/20 focus-visible:ring-pixar-blue/40 focus:border-pixar-blue shadow-sm"
-            />
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label htmlFor="name" className="text-right">
+                Name
+              </Label>
+              <Input 
+                id="name" 
+                placeholder="My Amazing Story" 
+                value={saveName} 
+                onChange={(e) => setSaveName(e.target.value)} 
+                className="col-span-3" 
+              />
+            </div>
           </div>
-          
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100/50 p-4 rounded-xl border border-blue-200/50">
-            <p className="flex items-start text-sm text-gray-700">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-pixar-blue mt-0.5 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2h-1V9z" clipRule="evenodd" />
-              </svg>
-              Your story will be saved locally in your browser. You can access all your saved stories from the Library section.
-            </p>
-          </div>
-          
-          <DialogFooter className="mt-4">
-            <Button variant="outline" onClick={() => setSaveDialogOpen(false)} className="border-gray-300">
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)} disabled={isSaving}>
               Cancel
             </Button>
-            <Button 
-              onClick={handleConfirmSave}
-              className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple"
-            >
-              Save Story
+            <Button onClick={handleConfirmSave} disabled={isSaving || !saveName.trim()}>
+              {isSaving ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                </>
+              ) : (storyId ? 'Update Story' : 'Save Story')}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      
-      {hasSavedState && (
-        <Card className="mb-4 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-600">Resume Saved Story</CardTitle>
-            <CardDescription>
-              You have a saved version of this story. Would you like to resume from where you left off?
-            </CardDescription>
-          </CardHeader>
-          <CardFooter className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={handleResume}
-              disabled={isSaving}
-              className="border-blue-200 hover:bg-blue-50"
-            >
-              Resume Saved Story
-            </Button>
-            <Button
-              onClick={handleGenerate}
-              disabled={isSaving}
-              className="bg-blue-600 text-white hover:bg-blue-700"
-            >
-              Start Fresh
-            </Button>
-          </CardFooter>
-        </Card>
-      )}
     </DashboardLayout>
   );
 };

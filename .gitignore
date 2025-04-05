@@ -45,4 +45,3 @@ dist-ssr
 .env.test
 .env.production
 server/.env
-server/.env

@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, 
   DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { supabase } from '@/lib/auth';
+import { ThemeToggle } from './ui/theme-toggle';
+import { useTheme } from '@/lib/theme';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -15,6 +17,7 @@ const Navbar = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [session, setSession] = useState(null);
   const [profile, setProfile] = useState(null);
+  const { theme } = useTheme();
   
   // Reset scroll position on route change
   useEffect(() => {
@@ -72,6 +75,7 @@ const Navbar = () => {
     navigate('/login');
   };
   
+  // Public navigation items
   const navItems = [
     { name: 'Home', path: '/' },
     { name: 'Features', path: '/features' },
@@ -79,10 +83,12 @@ const Navbar = () => {
     { name: 'Examples', path: '/examples' },
   ];
 
+  // Dashboard navigation items - updated to match the routes in App.tsx
   const dashboardNavItems = [
     { name: 'Dashboard', path: '/dashboard' },
-    { name: 'My Stories', path: '/stories' },
-    { name: 'Create New', path: '/create' },
+    { name: 'Saved Stories', path: '/saved-stories' },
+    { name: 'My Animations', path: '/my-animations' },
+    { name: 'Build Story', path: '/build-story' },
   ];
 
   // Redirect if user tries to access auth pages while logged in
@@ -95,8 +101,11 @@ const Navbar = () => {
 
   const currentPath = window.location.pathname;
   const isDashboard = currentPath.startsWith('/dashboard') || 
-                     currentPath.startsWith('/stories') || 
-                     currentPath.startsWith('/create') ||
+                     currentPath.startsWith('/saved-stories') || 
+                     currentPath.startsWith('/my-animations') ||
+                     currentPath.startsWith('/build-story') ||
+                     currentPath.startsWith('/review-story') ||
+                     currentPath.startsWith('/generating') ||
                      currentPath.startsWith('/settings');
 
   return (
@@ -106,7 +115,9 @@ const Navbar = () => {
       transition={{ duration: 0.3 }}
       className={`py-4 sticky top-0 z-50 transition-all duration-300 ${
         isScrolled || isDashboard
-          ? 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100/20' 
+          ? theme === 'dark' 
+            ? 'bg-gray-900/95 backdrop-blur-lg shadow-lg border-b border-gray-800/20' 
+            : 'bg-white/95 backdrop-blur-lg shadow-lg border-b border-gray-100/20'
           : 'bg-transparent'
       }`}
     >
@@ -143,7 +154,7 @@ const Navbar = () => {
                 className={`font-medium transition-all duration-300 relative group py-2 ${
                   currentPath === item.path 
                     ? 'text-pixar-blue' 
-                    : 'text-gray-700 hover:text-pixar-blue'
+                    : theme === 'dark' ? 'text-gray-300 hover:text-pixar-blue' : 'text-gray-700 hover:text-pixar-blue'
                 }`}
               >
                 {item.name}
@@ -156,6 +167,15 @@ const Navbar = () => {
         </div>
         
         <div className="flex items-center space-x-4">
+          {/* Theme toggle button */}
+          <motion.div
+            initial={{ opacity: 0, x: 10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.3, delay: 0.5 }}
+          >
+            <ThemeToggle />
+          </motion.div>
+          
           {session ? (
             <motion.div
               initial={{ opacity: 0, x: 10 }}
@@ -174,7 +194,11 @@ const Navbar = () => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent 
-                  className="w-64 mt-2 p-2 bg-white/95 backdrop-blur-lg shadow-xl shadow-blue-500/10 border-none rounded-xl" 
+                  className={`w-64 mt-2 p-2 ${
+                    theme === 'dark' 
+                      ? 'bg-gray-900/95 backdrop-blur-lg shadow-xl shadow-blue-900/10 border-gray-800'
+                      : 'bg-white/95 backdrop-blur-lg shadow-xl shadow-blue-500/10 border-none'
+                  } rounded-xl`} 
                   align="end"
                 >
                   <div className="flex items-center space-x-3 p-2 mb-2">
@@ -185,32 +209,66 @@ const Navbar = () => {
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex flex-col">
-                      <span className="font-semibold text-gray-900">{profile?.full_name}</span>
-                      <span className="text-sm text-gray-500">{profile?.email}</span>
+                      <span className={`font-semibold ${theme === 'dark' ? 'text-gray-100' : 'text-gray-900'}`}>{profile?.full_name}</span>
+                      <span className={`text-sm ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>{profile?.email}</span>
                     </div>
                   </div>
-                  <DropdownMenuSeparator className="bg-gray-200/50" />
+                  <DropdownMenuSeparator className={theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-200/50'} />
                   <div className="p-1">
                     <DropdownMenuItem 
                       onClick={() => navigate('/dashboard')} 
-                      className="cursor-pointer rounded-lg mb-1 p-2 text-gray-700 hover:text-pixar-blue hover:bg-blue-50/50 focus:text-pixar-blue focus:bg-blue-50/50 transition-all duration-200 group flex items-center"
+                      className={`cursor-pointer rounded-lg mb-1 p-2 ${
+                        theme === 'dark' 
+                          ? 'text-gray-300 hover:text-pixar-blue hover:bg-gray-800/50 focus:text-pixar-blue focus:bg-gray-800/50'
+                          : 'text-gray-700 hover:text-pixar-blue hover:bg-blue-50/50 focus:text-pixar-blue focus:bg-blue-50/50'
+                      } transition-all duration-200 group flex items-center`}
                     >
                       <User className="mr-2 h-4 w-4 group-hover:text-pixar-blue transition-colors" />
                       <span>Dashboard</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem 
+                      onClick={() => navigate('/saved-stories')} 
+                      className={`cursor-pointer rounded-lg mb-1 p-2 ${
+                        theme === 'dark' 
+                          ? 'text-gray-300 hover:text-pixar-blue hover:bg-gray-800/50 focus:text-pixar-blue focus:bg-gray-800/50'
+                          : 'text-gray-700 hover:text-pixar-blue hover:bg-blue-50/50 focus:text-pixar-blue focus:bg-blue-50/50'
+                      } transition-all duration-200 group flex items-center`}
+                    >
+                      <User className="mr-2 h-4 w-4 group-hover:text-pixar-blue transition-colors" />
+                      <span>Saved Stories</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
+                      onClick={() => navigate('/my-animations')} 
+                      className={`cursor-pointer rounded-lg mb-1 p-2 ${
+                        theme === 'dark' 
+                          ? 'text-gray-300 hover:text-pixar-blue hover:bg-gray-800/50 focus:text-pixar-blue focus:bg-gray-800/50'
+                          : 'text-gray-700 hover:text-pixar-blue hover:bg-blue-50/50 focus:text-pixar-blue focus:bg-blue-50/50'
+                      } transition-all duration-200 group flex items-center`}
+                    >
+                      <User className="mr-2 h-4 w-4 group-hover:text-pixar-blue transition-colors" />
+                      <span>My Animations</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem 
                       onClick={() => navigate('/settings')} 
-                      className="cursor-pointer rounded-lg mb-1 p-2 text-gray-700 hover:text-pixar-blue hover:bg-blue-50/50 focus:text-pixar-blue focus:bg-blue-50/50 transition-all duration-200 group flex items-center"
+                      className={`cursor-pointer rounded-lg mb-1 p-2 ${
+                        theme === 'dark' 
+                          ? 'text-gray-300 hover:text-pixar-blue hover:bg-gray-800/50 focus:text-pixar-blue focus:bg-gray-800/50'
+                          : 'text-gray-700 hover:text-pixar-blue hover:bg-blue-50/50 focus:text-pixar-blue focus:bg-blue-50/50'
+                      } transition-all duration-200 group flex items-center`}
                     >
                       <Settings className="mr-2 h-4 w-4 group-hover:text-pixar-blue transition-colors" />
                       <span>Settings</span>
                     </DropdownMenuItem>
-                    <DropdownMenuSeparator className="bg-gray-200/50" />
+                    <DropdownMenuSeparator className={theme === 'dark' ? 'bg-gray-700/50' : 'bg-gray-200/50'} />
                     <DropdownMenuItem 
                       onClick={handleSignOut} 
-                      className="cursor-pointer rounded-lg p-2 text-gray-700 hover:text-red-600 hover:bg-red-50/50 focus:text-red-600 focus:bg-red-50/50 transition-all duration-200 group flex items-center"
+                      className={`cursor-pointer rounded-lg p-2 ${
+                        theme === 'dark' 
+                          ? 'text-gray-300 hover:text-red-400 hover:bg-gray-800/50 focus:text-red-400 focus:bg-gray-800/50'
+                          : 'text-gray-700 hover:text-red-600 hover:bg-red-50/50 focus:text-red-600 focus:bg-red-50/50'
+                      } transition-all duration-200 group flex items-center`}
                     >
-                      <LogOut className="mr-2 h-4 w-4 group-hover:text-red-600 transition-colors" />
+                      <LogOut className="mr-2 h-4 w-4 group-hover:text-red-400 transition-colors" />
                       <span>Sign out</span>
                     </DropdownMenuItem>
                   </div>
@@ -218,52 +276,37 @@ const Navbar = () => {
               </DropdownMenu>
             </motion.div>
           ) : (
-            <>
+            <div className="flex items-center space-x-2">
               <motion.div
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.6 }}
-                className="hidden md:block"
+                transition={{ duration: 0.3, delay: 0.5 }}
               >
-                <Link to="/login" className="font-medium text-gray-700 hover:text-pixar-blue transition-all duration-300">
-                  Sign in
-                </Link>
+                <Button
+                  onClick={() => navigate("/login")}
+                  className="font-medium hover:scale-105 transition-all duration-300 bg-pixar-blue hover:bg-pixar-darkblue text-white rounded-full px-6 py-5 h-9 shadow-md shadow-blue-500/20"
+                >
+                  Sign In
+                </Button>
               </motion.div>
-              
-              <motion.div
-                initial={{ opacity: 0, x: 10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: 0.7 }}
-                whileHover={{ scale: 1.02 }}
-                className="shadow-lg shadow-blue-500/20"
-              >
-                <Link to="/signup">
-                  <Button className="primary-button bg-gradient-to-r from-pixar-blue to-pixar-teal hover:opacity-90 transition-all duration-300">
-                    Get Started
-                  </Button>
-                </Link>
-              </motion.div>
-            </>
+            </div>
           )}
           
-          {/* Mobile menu button */}
-          <motion.button
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.3, delay: 0.7 }}
-            className="md:hidden flex items-center"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-          >
-            {mobileMenuOpen ? (
-              <X className="h-6 w-6 text-gray-800" />
-            ) : (
-              <Menu className="h-6 w-6 text-gray-800" />
-            )}
-          </motion.button>
+          {/* Mobile Menu Button */}
+          <div className="md:hidden flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className={`ml-2 ${theme === 'dark' ? 'text-white hover:bg-gray-800' : 'text-gray-700 hover:bg-gray-200/50'}`}
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </Button>
+          </div>
         </div>
       </div>
       
-      {/* Mobile menu */}
+      {/* Mobile Menu */}
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
@@ -271,40 +314,81 @@ const Navbar = () => {
             animate={{ opacity: 1, height: 'auto' }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3 }}
-            className="md:hidden bg-white border-t border-gray-100 mt-2"
+            className={`md:hidden overflow-hidden ${theme === 'dark' ? 'bg-gray-900 border-t border-gray-800' : 'bg-white border-t border-gray-100'}`}
           >
             <div className="container-custom py-4 space-y-4">
-              {(isDashboard ? dashboardNavItems : navItems).map((item, index) => (
-                <motion.div
-                  key={item.name}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.1 * index }}
-                >
-                  <Link 
-                    to={item.path} 
-                    className="block py-2 font-medium text-gray-700 hover:text-pixar-blue transition-colors"
+              <div className="space-y-3">
+                {(isDashboard ? dashboardNavItems : navItems).map((item) => (
+                  <Link
+                    key={item.name}
+                    to={item.path}
+                    className={`block py-2 px-3 rounded-lg font-medium transition-all duration-200 ${
+                      currentPath === item.path 
+                        ? 'bg-blue-50 text-pixar-blue'
+                        : theme === 'dark' 
+                          ? 'text-gray-300 hover:bg-gray-800 hover:text-pixar-blue' 
+                          : 'text-gray-700 hover:bg-gray-100 hover:text-pixar-blue'
+                    }`}
                     onClick={() => setMobileMenuOpen(false)}
                   >
                     {item.name}
                   </Link>
-                </motion.div>
-              ))}
-              {!session && (
-                <motion.div
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ duration: 0.3, delay: 0.4 }}
-                >
-                  <Link 
-                    to="/login" 
-                    className="block py-2 font-medium text-gray-700 hover:text-pixar-blue transition-colors"
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
-                    Login
-                  </Link>
-                </motion.div>
-              )}
+                ))}
+                
+                {/* Additional mobile menu items for dashboard */}
+                {isDashboard && (
+                  <>
+                    <Link
+                      to="/settings"
+                      className={`block py-2 px-3 rounded-lg font-medium transition-all duration-200 ${
+                        currentPath === '/settings' 
+                          ? 'bg-blue-50 text-pixar-blue'
+                          : theme === 'dark' 
+                            ? 'text-gray-300 hover:bg-gray-800 hover:text-pixar-blue' 
+                            : 'text-gray-700 hover:bg-gray-100 hover:text-pixar-blue'
+                      }`}
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
+                      Settings
+                    </Link>
+                  </>
+                )}
+              </div>
+              
+              <div className="flex items-center justify-between pt-3">
+                <div className="flex items-center">
+                  <span className={`text-sm font-medium mr-3 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-700'}`}>Theme:</span>
+                  <ThemeToggle />
+                </div>
+                
+                {!session && (
+                  <div className="flex space-x-2">
+                    <Button
+                      onClick={() => {
+                        navigate("/signup");
+                        setMobileMenuOpen(false);
+                      }}
+                      variant="outline"
+                      className={`rounded-full px-4 ${
+                        theme === 'dark' 
+                          ? 'border-gray-700 text-gray-300 hover:bg-gray-800' 
+                          : 'border-gray-300 text-gray-700 hover:bg-gray-100'
+                      }`}
+                    >
+                      Sign Up
+                    </Button>
+                    <Button
+                      onClick={() => {
+                        navigate("/login");
+                        setMobileMenuOpen(false);
+                      }}
+                      className="bg-pixar-blue hover:bg-pixar-darkblue text-white rounded-full px-4 shadow-md shadow-blue-500/20"
+                    >
+                      Sign In
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
           </motion.div>
         )}

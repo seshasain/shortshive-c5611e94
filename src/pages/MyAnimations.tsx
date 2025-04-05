@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { supabase } from '@/lib/auth';
 import { toast } from 'sonner';
+import { useTheme } from '@/lib/theme';
 
 interface Animation {
   id: string;
@@ -26,6 +27,7 @@ interface Animation {
 const MyAnimations = () => {
   const [animations, setAnimations] = useState<Animation[]>([]);
   const [loading, setLoading] = useState(true);
+  const { theme } = useTheme();
 
   useEffect(() => {
     fetchAnimations();
@@ -145,17 +147,25 @@ const MyAnimations = () => {
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-block mb-3 px-4 py-2 rounded-full bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10"
+              className={`inline-block mb-3 px-4 py-2 rounded-full ${
+                theme === 'dark' 
+                  ? 'bg-gray-800 shadow-lg backdrop-blur-sm border border-gray-700' 
+                  : 'bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10'
+              }`}
             >
               <div className="flex items-center space-x-2">
                 <Film className="h-5 w-5 text-pixar-purple" />
-                <span className="text-sm font-medium text-gray-700">Your Animations</span>
+                <span className={`text-sm font-medium ${
+                  theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                }`}>Your Animations</span>
               </div>
             </motion.div>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight">
               My Animations
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl">
+            <p className={`text-lg ${
+              theme === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
+            } max-w-xl`}>
               View and manage your generated animations
             </p>
           </div>
@@ -173,24 +183,46 @@ const MyAnimations = () => {
           {loading ? (
             // Loading skeletons
             [...Array(6)].map((_, i) => (
-              <Card key={i} className="bg-white/70 backdrop-blur-sm border-pixar-blue/10">
+              <Card key={i} className={`${
+                theme === 'dark' 
+                  ? 'bg-gray-800/70 border-gray-700' 
+                  : 'bg-white/70 border-pixar-blue/10'
+              } backdrop-blur-sm`}>
                 <CardHeader className="space-y-2">
-                  <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
-                  <div className="h-3 w-1/2 bg-gray-200 rounded animate-pulse" />
+                  <div className={`h-4 w-2/3 ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                  } rounded animate-pulse`} />
+                  <div className={`h-3 w-1/2 ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                  } rounded animate-pulse`} />
                 </CardHeader>
                 <CardContent>
-                  <div className="h-24 bg-gray-200 rounded animate-pulse mb-4" />
-                  <div className="h-3 w-full bg-gray-200 rounded animate-pulse" />
+                  <div className={`h-24 ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                  } rounded animate-pulse mb-4`} />
+                  <div className={`h-3 w-full ${
+                    theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                  } rounded animate-pulse`} />
                 </CardContent>
               </Card>
             ))
           ) : animations.length === 0 ? (
             <div className="col-span-full">
-              <Card className="bg-white/70 backdrop-blur-sm border-pixar-blue/10 text-center p-8">
+              <Card className={`${
+                theme === 'dark' 
+                  ? 'bg-gray-800/70 border-gray-700 text-gray-300' 
+                  : 'bg-white/70 border-pixar-blue/10 text-gray-700'
+              } backdrop-blur-sm text-center p-8`}>
                 <CardContent className="space-y-4">
-                  <Film className="h-12 w-12 mx-auto text-gray-400" />
-                  <h3 className="text-xl font-semibold text-gray-700">No Animations Yet</h3>
-                  <p className="text-gray-500">
+                  <Film className={`h-12 w-12 mx-auto ${
+                    theme === 'dark' ? 'text-gray-500' : 'text-gray-400'
+                  }`} />
+                  <h3 className={`text-xl font-semibold ${
+                    theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+                  }`}>No Animations Yet</h3>
+                  <p className={
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                  }>
                     Start by creating a story and generating your first animation.
                   </p>
                   <Button 
@@ -211,12 +243,20 @@ const MyAnimations = () => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                <Card className="group bg-white/70 hover:bg-white/90 backdrop-blur-sm border-pixar-blue/10 transition-all duration-300 hover:shadow-lg">
+                <Card className={`group ${
+                  theme === 'dark'
+                    ? 'bg-gray-800/70 hover:bg-gray-800/90 border-gray-700'
+                    : 'bg-white/70 hover:bg-white/90 border-pixar-blue/10'
+                } backdrop-blur-sm transition-all duration-300 hover:shadow-lg`}>
                   <CardHeader>
                     <div className="flex justify-between items-start">
                       <div>
-                        <CardTitle className="line-clamp-1">{animation.story.title}</CardTitle>
-                        <CardDescription className="line-clamp-2 mt-1">
+                        <CardTitle className={`line-clamp-1 ${
+                          theme === 'dark' ? 'text-white' : ''
+                        }`}>{animation.story.title}</CardTitle>
+                        <CardDescription className={`line-clamp-2 mt-1 ${
+                          theme === 'dark' ? 'text-gray-400' : ''
+                        }`}>
                           {animation.story.description || 'No description provided'}
                         </CardDescription>
                       </div>
@@ -237,13 +277,17 @@ const MyAnimations = () => {
                         </p>
                       )}
                       {animation.status === 'PROCESSING' && (
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
+                        <div className={`w-full ${
+                          theme === 'dark' ? 'bg-gray-700' : 'bg-gray-200'
+                        } rounded-full h-2.5 mb-2`}>
                           <div className="bg-blue-600 h-2.5 rounded-full w-3/4 animate-pulse"></div>
                         </div>
                       )}
                     </div>
                     <div className="flex justify-between items-center">
-                      <div className="text-sm text-gray-500">
+                      <div className={`text-sm ${
+                        theme === 'dark' ? 'text-gray-400' : 'text-gray-500'
+                      }`}>
                         Created: {new Date(animation.created_at).toLocaleDateString()}
                       </div>
                       <div className="flex gap-2">

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Pencil, Save, X, Camera, Phone, Mail, MapPin, User } from 'lucide-react';
 import { supabase } from '@/lib/auth';
+import { useTheme } from '@/lib/theme';
 
 interface ProfileData {
   id: string;
@@ -29,6 +30,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
   const [formData, setFormData] = useState<Partial<ProfileData>>(profile);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { theme } = useTheme();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -110,9 +112,9 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
   };
 
   return (
-    <Card className="w-full max-w-2xl mx-auto shadow-lg border-pixar-blue/10">
+    <Card className={`w-full max-w-2xl mx-auto shadow-lg ${theme === 'dark' ? 'border-gray-700' : 'border-pixar-blue/10'}`}>
       <CardHeader className="pb-4">
-        <CardTitle className="text-2xl font-bold text-gray-900">Profile Information</CardTitle>
+        <CardTitle className={`text-2xl font-bold ${theme === 'dark' ? 'text-white' : 'text-gray-900'}`}>Profile Information</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -145,7 +147,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
             <motion.div
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="p-3 rounded-lg bg-red-50 text-red-600 text-sm"
+              className={`p-3 rounded-lg ${theme === 'dark' ? 'bg-red-900/20 text-red-300' : 'bg-red-50 text-red-600'} text-sm`}
             >
               {error}
             </motion.div>
@@ -154,7 +156,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
           {/* Profile Fields */}
           <div className="grid gap-6">
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="full_name" className="flex items-center gap-2 text-gray-600">
+              <Label htmlFor="full_name" className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                 <User className="h-4 w-4 text-pixar-blue" />
                 Full Name
               </Label>
@@ -164,13 +166,13 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 value={formData.full_name || ''}
                 onChange={handleInputChange}
                 disabled={!isEditing}
-                className="border-pixar-blue/20 focus:border-pixar-blue"
+                className={`${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 focus:border-pixar-blue' : 'border-pixar-blue/20 focus:border-pixar-blue'}`}
                 required
               />
             </div>
 
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="email" className="flex items-center gap-2 text-gray-600">
+              <Label htmlFor="email" className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                 <Mail className="h-4 w-4 text-pixar-blue" />
                 Email
               </Label>
@@ -179,12 +181,12 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 name="email"
                 value={formData.email || ''}
                 disabled
-                className="bg-gray-50 border-pixar-blue/20"
+                className={`${theme === 'dark' ? 'bg-gray-600 border-gray-600 text-gray-300' : 'bg-gray-50 border-pixar-blue/20'}`}
               />
             </div>
 
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="phone_number" className="flex items-center gap-2 text-gray-600">
+              <Label htmlFor="phone_number" className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                 <Phone className="h-4 w-4 text-pixar-blue" />
                 Phone Number (Optional)
               </Label>
@@ -195,12 +197,12 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 placeholder="+1 (555) 123-4567"
-                className="border-pixar-blue/20 focus:border-pixar-blue"
+                className={`${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 focus:border-pixar-blue placeholder:text-gray-500' : 'border-pixar-blue/20 focus:border-pixar-blue'}`}
               />
             </div>
 
             <div className="flex flex-col space-y-2">
-              <Label htmlFor="country" className="flex items-center gap-2 text-gray-600">
+              <Label htmlFor="country" className={`flex items-center gap-2 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
                 <MapPin className="h-4 w-4 text-pixar-blue" />
                 Country (Optional)
               </Label>
@@ -211,7 +213,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                 onChange={handleInputChange}
                 disabled={!isEditing}
                 placeholder="United States"
-                className="border-pixar-blue/20 focus:border-pixar-blue"
+                className={`${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200 focus:border-pixar-blue placeholder:text-gray-500' : 'border-pixar-blue/20 focus:border-pixar-blue'}`}
               />
             </div>
           </div>
@@ -229,7 +231,7 @@ const ProfileCard = ({ profile, onUpdate }: ProfileCardProps) => {
                     setError(null);
                   }}
                   disabled={isLoading}
-                  className="border-pixar-blue/20 hover:bg-pixar-blue/5"
+                  className={`${theme === 'dark' ? 'border-gray-600 hover:bg-gray-700 text-gray-300' : 'border-pixar-blue/20 hover:bg-pixar-blue/5'}`}
                 >
                   <X className="h-4 w-4 mr-2" />
                   Cancel

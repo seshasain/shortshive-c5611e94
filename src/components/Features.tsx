@@ -1,26 +1,39 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Camera, Film, Play, Video, Users, Wand2, Sparkles } from 'lucide-react';
+import { useTheme } from '@/lib/theme';
 
-const FeatureCard = ({ icon, title, description }: { icon: React.ReactNode, title: string, description: string }) => (
+const FeatureCard = ({ icon, title, description, theme }: { 
+  icon: React.ReactNode, 
+  title: string, 
+  description: string,
+  theme: 'light' | 'dark' 
+}) => (
   <motion.div 
     whileHover={{ y: -5, boxShadow: '0 10px 30px -15px rgba(0,0,0,0.15)' }}
     initial={{ opacity: 0, y: 20 }}
     whileInView={{ opacity: 1, y: 0 }}
     transition={{ duration: 0.5 }}
     viewport={{ once: true }}
-    className="feature-card group"
+    className={`feature-card group ${
+      theme === 'dark' 
+        ? 'bg-gray-800 border-gray-700 hover:shadow-gray-900/40' 
+        : 'bg-white border-gray-100 hover:shadow-gray-200/70'
+    }`}
   >
     <div className="mb-4 w-14 h-14 rounded-2xl flex items-center justify-center bg-gradient-to-br from-pixar-blue/10 to-pixar-teal/10 group-hover:from-pixar-blue/20 group-hover:to-pixar-teal/20 transition-colors">
       {icon}
     </div>
-    <h3 className="text-xl font-bold mb-2">{title}</h3>
-    <p className="text-gray-600">{description}</p>
+    <h3 className={`text-xl font-bold mb-2 ${
+      theme === 'dark' ? 'text-white' : 'text-gray-900'
+    }`}>{title}</h3>
+    <p className={theme === 'dark' ? 'text-gray-400' : 'text-gray-600'}>{description}</p>
   </motion.div>
 );
 
 const Features = () => {
+  const { theme } = useTheme();
+  
   // Animation variants for staggered animations
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -33,7 +46,11 @@ const Features = () => {
   };
   
   return (
-    <section className="py-20 bg-gradient-to-b from-white to-blue-50 relative overflow-hidden">
+    <section className={`py-20 relative overflow-hidden ${
+      theme === 'dark'
+        ? 'bg-gradient-to-b from-gray-900 to-gray-800'
+        : 'bg-gradient-to-b from-white to-blue-50'
+    }`}>
       {/* Animated background elements */}
       <motion.div 
         animate={{ 
@@ -66,17 +83,23 @@ const Features = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             viewport={{ once: true }}
           >
-            <div className="inline-block mb-4 px-4 py-2 rounded-full bg-white/80 shadow-sm backdrop-blur-sm">
+            <div className={`inline-block mb-4 px-4 py-2 rounded-full shadow-sm backdrop-blur-sm ${
+              theme === 'dark' 
+                ? 'bg-gray-800/80' 
+                : 'bg-white/80'
+            }`}>
               <div className="flex items-center space-x-2">
                 <Sparkles className="h-5 w-5 text-pixar-orange" />
-                <span className="text-sm font-medium text-gray-800">Powerful Animation Tools</span>
+                <span className={`text-sm font-medium ${
+                  theme === 'dark' ? 'text-gray-200' : 'text-gray-800'
+                }`}>Powerful Animation Tools</span>
               </div>
             </div>
           </motion.div>
           
           <h2 className="text-3xl md:text-4xl font-bold mb-4 relative">
             <span className="pixar-text-gradient">Powerful Animation Tools</span>
-            <span> at Your Fingertips</span>
+            <span className={theme === 'dark' ? ' text-white' : ''}> at Your Fingertips</span>
             <motion.div
               className="absolute -bottom-2 left-0 right-0 mx-auto w-36 h-1 bg-gradient-to-r from-pixar-blue via-pixar-purple to-pixar-blue rounded-full"
               initial={{ width: 0, opacity: 0 }}
@@ -85,7 +108,7 @@ const Features = () => {
               transition={{ duration: 0.8, delay: 0.5 }}
             />
           </h2>
-          <p className="text-xl text-gray-600">
+          <p className={`text-xl ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}`}>
             Our platform combines AI storytelling with Pixar-level animation to help you create professional animations in minutes, not months.
           </p>
         </motion.div>
@@ -101,24 +124,28 @@ const Features = () => {
             icon={<Film className="h-7 w-7 text-pixar-blue" />}
             title="AI Story Generation"
             description="Generate compelling stories with our AI, complete with engaging plots and characters."
+            theme={theme}
           />
           
           <FeatureCard 
             icon={<Video className="h-7 w-7 text-pixar-orange" />}
             title="Consistent Characters"
             description="Create and customize characters that maintain their look and personality throughout your animation."
+            theme={theme}
           />
           
           <FeatureCard 
             icon={<Camera className="h-7 w-7 text-pixar-purple" />}
             title="Pixar-Level Quality"
             description="Enjoy high-quality 3D animations that rival professional studio productions."
+            theme={theme}
           />
           
           <FeatureCard 
             icon={<Play className="h-7 w-7 text-pixar-teal" />}
             title="Voiceover & Subtitles"
             description="Add professional voiceovers and subtitles in multiple languages with just a few clicks."
+            theme={theme}
           />
         </motion.div>
         
@@ -128,7 +155,11 @@ const Features = () => {
           whileInView={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.7, delay: 0.3 }}
           viewport={{ once: true }}
-          className="mt-20 bg-gradient-to-r from-pixar-purple/5 to-pixar-yellow/5 rounded-3xl p-8 md:p-12 relative overflow-hidden"
+          className={`mt-20 rounded-3xl p-8 md:p-12 relative overflow-hidden ${
+            theme === 'dark'
+              ? 'bg-gradient-to-r from-gray-800/80 to-gray-800/50'
+              : 'bg-gradient-to-r from-pixar-purple/5 to-pixar-yellow/5'
+          }`}
         >
           {/* Animated accent elements */}
           <motion.div 
@@ -150,8 +181,12 @@ const Features = () => {
               viewport={{ once: true }}
               className="flex-1"
             >
-              <h3 className="text-2xl md:text-3xl font-bold mb-4">Bring Your Stories to Life</h3>
-              <p className="text-gray-600 mb-6">
+              <h3 className={`text-2xl md:text-3xl font-bold mb-4 ${
+                theme === 'dark' ? 'text-white' : 'text-gray-900'
+              }`}>Bring Your Stories to Life</h3>
+              <p className={`mb-6 ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>
                 From concept to completion in minutes. Write your story or use our AI to generate one, then watch as our platform transforms it into a stunning animated short film.
               </p>
               
@@ -171,7 +206,9 @@ const Features = () => {
                 ].map((item, index) => (
                   <motion.li 
                     key={index} 
-                    className="flex items-start"
+                    className={`flex items-start ${
+                      theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
+                    }`}
                     initial={{ opacity: 0, x: -10 }}
                     whileInView={{ opacity: 1, x: 0 }}
                     transition={{ duration: 0.3, delay: index * 0.1 }}
@@ -198,34 +235,56 @@ const Features = () => {
               <div className="relative">
                 <motion.div 
                   whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 400, damping: 10 }}
-                  className="rounded-2xl overflow-hidden shadow-xl border-4 border-white"
+                  className={`rounded-lg overflow-hidden shadow-xl ${
+                    theme === 'dark' ? 'border border-gray-700' : ''
+                  }`}
                 >
                   <img 
-                    src="https://images.unsplash.com/photo-1630855214759-4bed28d2e847?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2532&q=80" 
-                    alt="Animation Process" 
-                    className="w-full"
+                    src="https://images.unsplash.com/photo-1627163439134-7a8c47e08208?ixlib=rb-4.0.3&auto=format&fit=crop&w=2340&q=80" 
+                    alt="Animation Interface" 
+                    className="w-full rounded-lg"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-pixar-blue/20 to-transparent mix-blend-overlay"></div>
                 </motion.div>
                 
-                {/* Floating progress indicator */}
+                {/* Floating UI elements */}
                 <motion.div 
                   initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
+                  whileInView={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: 0.8 }}
-                  className="absolute -bottom-6 right-8 bg-white rounded-xl shadow-lg p-4 z-20 border border-gray-100"
+                  viewport={{ once: true }}
+                  className={`absolute -bottom-5 -left-5 p-3 rounded-lg shadow-lg ${
+                    theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+                  }`}
                 >
-                  <div className="flex items-center space-x-3">
-                    <div className="h-2 w-2 rounded-full bg-pixar-green"></div>
-                    <div className="w-40 bg-gray-200 rounded-full h-2.5">
-                      <motion.div 
-                        initial={{ width: "0%" }}
-                        animate={{ width: "75%" }}
-                        transition={{ duration: 1.5, delay: 1 }}
-                        className="bg-pixar-green h-2.5 rounded-full"
-                      />
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-pixar-blue/20 flex items-center justify-center">
+                      <Users className="h-4 w-4 text-pixar-blue" />
                     </div>
-                    <span className="text-sm font-medium">75%</span>
+                    <div>
+                      <p className={`text-xs ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>Characters</p>
+                      <p className={`text-sm font-semibold ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>5 Selected</p>
+                    </div>
+                  </div>
+                </motion.div>
+                
+                <motion.div 
+                  initial={{ opacity: 0, y: -20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 1 }}
+                  viewport={{ once: true }}
+                  className={`absolute -top-5 -right-5 p-3 rounded-lg shadow-lg ${
+                    theme === 'dark' ? 'bg-gray-800 border border-gray-700' : 'bg-white'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <div>
+                      <p className={`text-xs text-right ${theme === 'dark' ? 'text-gray-400' : 'text-gray-500'}`}>AI Magic</p>
+                      <p className={`text-sm font-semibold text-right ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'}`}>Enhanced</p>
+                    </div>
+                    <div className="w-8 h-8 rounded-full bg-pixar-purple/20 flex items-center justify-center">
+                      <Wand2 className="h-4 w-4 text-pixar-purple" />
+                    </div>
                   </div>
                 </motion.div>
               </div>
