@@ -404,14 +404,6 @@ const StoryReview = () => {
           </div>
           <div className="flex flex-col sm:flex-row space-y-3 sm:space-y-0 sm:space-x-3 mt-6 md:mt-0">
             <Button 
-              variant="outline" 
-              onClick={handleBack}
-              className="flex items-center border border-pixar-blue/20 hover:bg-gray-50 transition-all"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-            <Button 
               onClick={handleSaveStory}
               variant="outline"
               className="flex items-center border border-pixar-purple/20 text-pixar-purple hover:bg-pixar-purple/5 transition-all"
@@ -422,14 +414,6 @@ const StoryReview = () => {
                 <polyline points="7 3 7 8 15 8"></polyline>
               </svg>
               Save Story
-            </Button>
-            <Button
-              onClick={() => setShowPreview(true)}
-              variant="outline"
-              className="flex items-center border border-pixar-blue/20 text-pixar-blue hover:bg-pixar-blue/5 transition-all"
-            >
-              <Play className="mr-2 h-4 w-4" />
-              Preview
             </Button>
           </div>
         </motion.div>
@@ -483,8 +467,7 @@ const StoryReview = () => {
                 </h3>
                 <p className="text-sm text-gray-600 mt-1 leading-relaxed">
                   We've used your prompt: <span className="font-medium text-gray-900 bg-pixar-blue/10 px-2 py-1 rounded">{promptText}</span> to generate a complete story. 
-                  You can edit this story and its scenes before proceeding to animation. 
-                  Our AI has also suggested a {colorPalette} color palette based on your selected emotion.
+                  You can edit story and its scenes before proceeding to animation. 
                 </p>
               </motion.div>
             )}
@@ -519,10 +502,6 @@ const StoryReview = () => {
                       <Wand2 className="mr-2 h-4 w-4 text-pixar-purple" />
                       Improve Text
                     </Button>
-                    <Button size="sm" className="bg-pixar-blue text-white hover:bg-pixar-darkblue shadow-md">
-                      <Check className="mr-2 h-4 w-4" />
-                      Save
-                    </Button>
                   </CardFooter>
                 </Card>
               </motion.div>
@@ -536,10 +515,15 @@ const StoryReview = () => {
               >
                 <Card className="h-full overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
                   <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-3 pt-6">
-                    <CardTitle className="flex items-center text-xl">
-                      <Film className="mr-3 h-5 w-5 text-pixar-blue" />
-                      Scene Breakdown
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <Film className="mr-3 h-5 w-5 text-pixar-blue" />
+                        <CardTitle className="text-xl">Scene Breakdown</CardTitle>
+                      </div>
+                      <div className="text-sm font-medium text-gray-600 bg-gray-100 py-1.5 px-3 rounded-full">
+                        {scenes.length} scenes total
+                      </div>
+                    </div>
                     <CardDescription className="text-gray-500">
                       Review and edit individual scenes for your animation
                     </CardDescription>
@@ -562,23 +546,17 @@ const StoryReview = () => {
                       <Wand2 className="mr-2 h-4 w-4 text-pixar-blue" />
                       Regenerate Scenes
                     </Button>
-                    <div className="text-sm font-medium text-gray-600 bg-gray-100 py-1.5 px-3 rounded-full">
-                      {scenes.length} scenes total
-                    </div>
+                    <Button 
+                      variant="outline"
+                      onClick={() => setActiveTab('settings')}
+                      className="gap-2 border border-pixar-blue/20 text-pixar-blue hover:bg-pixar-blue/5 transition-all"
+                    >
+                      Continue to Visual Settings
+                      <ArrowRight className="h-5 w-5 ml-2" />
+                    </Button>
                   </CardFooter>
                 </Card>
               </motion.div>
-            </div>
-            
-            <div className="flex justify-end pt-4">
-              <Button 
-                variant="outline"
-                onClick={() => setActiveTab('settings')}
-                className="gap-2 border border-pixar-blue/20 text-pixar-blue hover:bg-pixar-blue/5 transition-all px-6 py-3 text-base"
-              >
-                Continue to Visual Settings
-                <ArrowRight className="h-5 w-5 ml-2" />
-              </Button>
             </div>
           </TabsContent>
           
