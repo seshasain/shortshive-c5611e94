@@ -3,9 +3,6 @@
 .env.*
 !.env.example
 
-# Prisma
-prisma/.env
-
 # Dependencies
 node_modules/
 
@@ -48,4 +45,4 @@ dist-ssr
 .env.test
 .env.production
 server/.env
-/Users/seshasainampalli/Documents/GitHub/shortshive-c5611e94/server/.env
+server/.env

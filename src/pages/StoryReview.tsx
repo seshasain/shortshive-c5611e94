@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
-import { Edit, Play, ArrowLeft, ArrowRight, Check, Wand2, Film, Smartphone, Palette, VideoIcon, Settings, Sparkles } from 'lucide-react';
+import { Edit, Play, ArrowLeft, ArrowRight, Check, Wand2, Film, Smartphone, Palette, VideoIcon, Settings, Sparkles, Monitor, Gamepad2, Pencil, Lightbulb } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +17,9 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
 import SceneCard from '@/components/dashboard/SceneCard';
 import StoryLoadingAnimation from '@/components/StoryLoadingAnimation';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const mockScenes = [
  
@@ -80,8 +83,8 @@ const StoryReview = () => {
   
   // Define emotionToColorMap outside of useEffect to avoid duplication
   const emotionToColorMap: Record<string, string> = {
-    'Happiness': 'vibrant',
-    'Sadness': 'pastel',
+    'Happy': 'vibrant',
+    'Sad': 'pastel',
     'Anger': 'retro',
     'Fear': 'fantasy',
     'Love': 'nature',
@@ -418,340 +421,297 @@ const StoryReview = () => {
           </div>
         </motion.div>
         
-        {/* Success toast notification */}
+        {/* Main Content */}
+        <div className="space-y-6">
+          {/* Story Header Section */}
+          {storyType === 'ai-prompt' && (
+            <motion.div 
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="flex items-center gap-4 p-4 bg-gradient-to-r from-pixar-blue/5 via-pixar-purple/5 to-transparent rounded-2xl border border-pixar-blue/10"
+            >
+              <div className="flex-shrink-0 p-3 bg-white/50 rounded-xl">
+                <Sparkles className="h-6 w-6 text-pixar-blue" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-gray-900 flex items-center text-lg">
+                  AI-Generated Story
+                </h3>
+                <p className="text-sm text-gray-600 mt-1">
+                  Based on prompt: <span className="font-medium text-gray-800 bg-white/50 px-2 py-0.5 rounded-md">{promptText}</span>
+                </p>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Main Grid Layout */}
+          <div className="grid grid-cols-12 gap-6">
+            {/* Left Column: Story Content */}
+            <div className="col-span-12 lg:col-span-5 space-y-6">
+              {/* Complete Story Section */}
+              <Card className="border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg">
+                <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-pixar-blue/5 rounded-lg">
+                        <Edit className="h-5 w-5 text-pixar-blue" />
+                      </div>
+                      <div>
+                        <CardTitle className="text-lg font-semibold">Story Content</CardTitle>
+                        <CardDescription className="text-sm text-gray-500">
+                          {storyText.length > 0 ? `${storyText.split(' ').length} words` : 'Edit your narrative'}
+                        </CardDescription>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-pixar-purple hover:text-pixar-purple/80">
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Enhance
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className={`relative transition-all duration-300 ease-in-out ${
+                    storyText.length > 1000 ? 'min-h-[300px] max-h-[600px]' :
+                    storyText.length > 500 ? 'min-h-[250px] max-h-[500px]' :
+                    'min-h-[200px] max-h-[400px]'
+                  }`}>
+                    <Textarea 
+                      value={storyText} 
+                      onChange={(e) => setStoryText(e.target.value)}
+                      className="absolute inset-0 w-full h-full resize-none border-gray-200 focus:border-pixar-blue/20 bg-white/70 text-gray-700 text-base leading-relaxed overflow-auto scrollbar-thin scrollbar-thumb-pixar-blue/20 scrollbar-track-transparent hover:scrollbar-thumb-pixar-blue/30"
+                      placeholder="Enter your story content here..."
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column: Scene Breakdown */}
+            <div className="col-span-12 lg:col-span-7">
+              <Card className="border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg">
+                <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-pixar-blue/5 rounded-lg">
+                        <Film className="h-5 w-5 text-pixar-blue" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-3">
+                          <CardTitle className="text-lg font-semibold">Scene Breakdown</CardTitle>
+                          <Badge variant="secondary" className="bg-gray-100/80 text-gray-600 font-medium">
+                            {scenes.length} scenes
+                          </Badge>
+                        </div>
+                        <CardDescription className="text-sm text-gray-500">Manage your animation scenes</CardDescription>
+                      </div>
+                    </div>
+                    <Button variant="ghost" size="sm" className="text-pixar-purple hover:text-pixar-purple/80">
+                      <Wand2 className="h-4 w-4 mr-2" />
+                      Regenerate
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-6">
+                  {/* Visual Settings Section */}
+                  <div className="mb-6 p-4 bg-gray-50/80 rounded-lg border border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <Settings className="h-4 w-4 text-pixar-blue" />
+                        <h3 className="text-sm font-medium text-gray-700">Visual Settings</h3>
+                      </div>
+                    </div>
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Visual Style Selection */}
+                      <div className="w-full md:w-2/3 space-y-2">
+                        <Label className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                          <Palette className="h-4 w-4 text-pixar-blue" />
+                          Choose Visual Style
+                        </Label>
+                        <Select value={colorPalette} onValueChange={setColorPalette}>
+                          <SelectTrigger className="w-full bg-white border-pixar-blue/20 h-10">
+                            <SelectValue>
+                              {colorPalette === 'pixar' && (
+                                <div className="flex items-center gap-2">
+                                  <Film className="h-4 w-4 text-pixar-blue" />
+                                  <span>3D Pixar / Disney Style</span>
+                                </div>
+                              )}
+                              {colorPalette === 'cinematic' && (
+                                <div className="flex items-center gap-2">
+                                  <Gamepad2 className="h-4 w-4 text-purple-500" />
+                                  <span>3D Cinematic</span>
+                                </div>
+                              )}
+                              {colorPalette === 'anime' && (
+                                <div className="flex items-center gap-2">
+                                  <Sparkles className="h-4 w-4 text-pink-500" />
+                                  <span>Anime Style</span>
+                                </div>
+                              )}
+                              {colorPalette === 'cartoon' && (
+                                <div className="flex items-center gap-2">
+                                  <Pencil className="h-4 w-4 text-orange-500" />
+                                  <span>2D Cartoon Style</span>
+                                </div>
+                              )}
+                            </SelectValue>
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="pixar" className="py-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 rounded-md bg-pixar-blue/10">
+                                    <Film className="h-4 w-4 text-pixar-blue" />
+                                  </div>
+                                  <span className="font-medium">3D Pixar / Disney Style</span>
+                                </div>
+                                <span className="text-xs text-gray-500 pl-9">Soft, colorful, expressive animation</span>
+                              </div>
+                            </SelectItem>
+
+                            <SelectItem value="cinematic" className="py-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 rounded-md bg-purple-500/10">
+                                    <Gamepad2 className="h-4 w-4 text-purple-500" />
+                                  </div>
+                                  <span className="font-medium">3D Cinematic</span>
+                                </div>
+                                <span className="text-xs text-gray-500 pl-9">Realistic or stylized game-like visuals</span>
+                              </div>
+                            </SelectItem>
+
+                            <SelectItem value="anime" className="py-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 rounded-md bg-pink-500/10">
+                                    <Sparkles className="h-4 w-4 text-pink-500" />
+                                  </div>
+                                  <span className="font-medium">Anime Style</span>
+                                </div>
+                                <span className="text-xs text-gray-500 pl-9">Modern anime look with high energy</span>
+                              </div>
+                            </SelectItem>
+
+                            <SelectItem value="cartoon" className="py-2">
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="p-1.5 rounded-md bg-orange-500/10">
+                                    <Pencil className="h-4 w-4 text-orange-500" />
+                                  </div>
+                                  <span className="font-medium">2D Cartoon Style</span>
+                                </div>
+                                <span className="text-xs text-gray-500 pl-9">Simple, bold lines and fun style</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {/* Video Format */}
+                      <div className="w-full md:w-1/3 space-y-2">
+                        <Label className="flex items-center gap-2 text-sm font-medium text-gray-600">
+                          <VideoIcon className="h-4 w-4 text-pixar-orange" />
+                          Video Format
+                        </Label>
+                        <div className="flex gap-2 h-10">
+                          <div 
+                            onClick={() => setAspectRatio('16:9')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 cursor-pointer rounded-md border transition-all
+                                    ${aspectRatio === '16:9' 
+                                      ? 'border-pixar-blue bg-pixar-blue/5' 
+                                      : 'border-gray-200 hover:border-gray-300'}`}
+                          >
+                            <Monitor className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-600">16:9</span>
+                          </div>
+                          
+                          <div 
+                            onClick={() => setAspectRatio('9:16')}
+                            className={`flex-1 flex items-center justify-center gap-1.5 cursor-pointer rounded-md border transition-all
+                                    ${aspectRatio === '9:16'
+                                      ? 'border-pixar-blue bg-pixar-blue/5'
+                                      : 'border-gray-200 hover:border-gray-300'}`}
+                          >
+                            <Smartphone className="h-4 w-4 text-gray-500" />
+                            <span className="text-sm font-medium text-gray-600">9:16</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Scene Cards */}
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                    {scenes.map((scene, index) => (
+                      <SceneCard 
+                        key={scene.id}
+                        scene={scene}
+                        index={index}
+                        onEdit={handleEditScene}
+                        delay={index * 0.1}
+                      />
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+
+          {/* Bottom Action Bar */}
+          <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-200 shadow-lg z-50">
+            <div className="container-custom py-4">
+              <div className="flex items-center justify-between">
+                <Button 
+                  variant="outline" 
+                  onClick={handleBack}
+                  className="border-gray-300 hover:bg-gray-50"
+                >
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Story Builder
+                </Button>
+                <div className="flex items-center gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={handleSaveStory}
+                    className="border-pixar-purple/20 text-pixar-purple hover:bg-pixar-purple/5"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Save Progress
+                  </Button>
+                  <Button 
+                    onClick={handleGenerate}
+                    className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:opacity-90 shadow-md"
+                  >
+                    Generate Animation
+                    <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Success Toast */}
         {saveSuccess && (
           <motion.div 
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="fixed top-6 right-6 z-50 bg-pixar-green/20 border-l-4 border-pixar-green text-green-800 p-4 rounded shadow-lg"
+            className="fixed top-6 right-6 z-50 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 rounded-lg shadow-lg"
           >
-            <div className="flex items-center">
-              <svg className="h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-              </svg>
+            <div className="flex items-center gap-3">
+              <Check className="h-5 w-5 text-emerald-500" />
               <p className="font-medium">Story saved successfully!</p>
             </div>
           </motion.div>
         )}
-        
-        {/* Loading Animation */}
-        {isLoading && (
-          <StoryLoadingAnimation />
-        )}
-        
-        {/* Main Tabs Navigation */}
-        <Tabs defaultValue="story" value={activeTab} onValueChange={setActiveTab} className="mb-10">
-          <TabsList className="grid w-full grid-cols-2 mb-8 p-1 bg-gray-100/80 rounded-xl">
-            <TabsTrigger value="story" className="data-[state=active]:bg-pixar-blue data-[state=active]:text-white rounded-lg py-3 transition-all">
-              <Edit className="mr-2 h-4 w-4" />
-              Story Content
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="data-[state=active]:bg-pixar-blue data-[state=active]:text-white rounded-lg py-3 transition-all">
-              <Settings className="mr-2 h-4 w-4" />
-              Visual Settings
-            </TabsTrigger>
-          </TabsList>
-          
-          {/* Story Content Tab */}
-          <TabsContent value="story" className="space-y-8">
-            {/* Info Banner */}
-            {storyType === 'ai-prompt' && (
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="bg-gradient-to-br from-pixar-blue/5 to-pixar-purple/5 rounded-xl p-6 border border-pixar-blue/10 shadow-sm"
-              >
-                <h3 className="font-semibold text-pixar-blue flex items-center mb-3 text-lg">
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  AI Story Generation
-                </h3>
-                <p className="text-sm text-gray-600 mt-1 leading-relaxed">
-                  We've used your prompt: <span className="font-medium text-gray-900 bg-pixar-blue/10 px-2 py-1 rounded">{promptText}</span> to generate a complete story. 
-                  You can edit story and its scenes before proceeding to animation. 
-                </p>
-              </motion.div>
-            )}
-            
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
-              {/* Complete Story Section */}
-              <motion.div 
-                className="lg:col-span-1"
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6 }}
-              >
-                <Card className="h-full overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
-                  <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-3 pt-6">
-                    <CardTitle className="flex items-center text-xl">
-                      <Edit className="mr-3 h-5 w-5 text-pixar-blue" />
-                      Complete Story
-                    </CardTitle>
-                    <CardDescription className="text-gray-500">
-                      Edit your full story text
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <Textarea 
-                      value={storyText} 
-                      onChange={(e) => setStoryText(e.target.value)}
-                      className="min-h-[450px] border-pixar-blue/20 focus:border-pixar-blue focus-visible:ring-pixar-blue/40 text-gray-700 text-base shadow-sm"
-                    />
-                  </CardContent>
-                  <CardFooter className="flex justify-end space-x-3 border-t pt-5 bg-gray-50">
-                    <Button variant="outline" size="sm" className="border-gray-300 hover:bg-gray-100 transition-colors">
-                      <Wand2 className="mr-2 h-4 w-4 text-pixar-purple" />
-                      Improve Text
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-              
-              {/* Scene Breakdown */}
-              <motion.div 
-                className="lg:col-span-2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.6, delay: 0.1 }}
-              >
-                <Card className="h-full overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
-                  <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-3 pt-6">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Film className="mr-3 h-5 w-5 text-pixar-blue" />
-                        <CardTitle className="text-xl">Scene Breakdown</CardTitle>
-                      </div>
-                      <div className="text-sm font-medium text-gray-600 bg-gray-100 py-1.5 px-3 rounded-full">
-                        {scenes.length} scenes total
-                      </div>
-                    </div>
-                    <CardDescription className="text-gray-500">
-                      Review and edit individual scenes for your animation
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {scenes.map((scene, index) => (
-                        <SceneCard 
-                          key={scene.id}
-                          scene={scene}
-                          index={index}
-                          onEdit={handleEditScene}
-                          delay={index * 0.1}
-                        />
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-between items-center border-t pt-5 bg-gray-50">
-                    <Button variant="outline" className="border-gray-300 hover:bg-gray-100 transition-colors">
-                      <Wand2 className="mr-2 h-4 w-4 text-pixar-blue" />
-                      Regenerate Scenes
-                    </Button>
-                    <Button 
-                      variant="outline"
-                      onClick={() => setActiveTab('settings')}
-                      className="gap-2 border border-pixar-blue/20 text-pixar-blue hover:bg-pixar-blue/5 transition-all"
-                    >
-                      Continue to Visual Settings
-                      <ArrowRight className="h-5 w-5 ml-2" />
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </motion.div>
-            </div>
-          </TabsContent>
-          
-          {/* Visual Settings Tab */}
-          <TabsContent value="settings">
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-                {/* Animation Settings Card */}
-                <Card className="overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
-                  <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-3 pt-6">
-                    <CardTitle className="flex items-center text-xl">
-                      <Sparkles className="mr-3 h-5 w-5 text-pixar-blue" />
-                      Visual Style
-                    </CardTitle>
-                    <CardDescription className="text-gray-500">
-                      Customize the visual aesthetic of your animation
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-8 p-6">
-                    {/* Color Palette */}
-                    <div>
-                      <Label className="text-base mb-4 flex items-center font-medium">
-                        <Palette className="mr-2 h-4 w-4 text-pixar-blue" />
-                        Color Palette
-                      </Label>
-                      <RadioGroup value={colorPalette} onValueChange={setColorPalette}>
-                        <div className="grid grid-cols-3 gap-3">
-                          {colorPalettes.map((palette) => (
-                            <div 
-                              key={palette.id}
-                              onClick={() => setColorPalette(palette.id)}
-                              className={`cursor-pointer rounded-lg p-3 transition-all hover:scale-105 
-                                      ${colorPalette === palette.id 
-                                        ? 'ring-2 ring-pixar-blue bg-pixar-blue/5' 
-                                        : 'border border-gray-200 hover:border-gray-300'}`}
-                            >
-                              <div className="flex h-6 rounded-md overflow-hidden mb-2 shadow-sm">
-                                {palette.colors.map((color, index) => (
-                                  <div 
-                                    key={index}
-                                    style={{ 
-                                      backgroundColor: color,
-                                      width: `${100 / palette.colors.length}%` 
-                                    }}
-                                  />
-                                ))}
-                              </div>
-                              <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium">{palette.name}</p>
-                                <RadioGroupItem 
-                                  value={palette.id} 
-                                  id={`palette-${palette.id}`}
-                                  className="h-3.5 w-3.5 text-pixar-blue"
-                                />
-                              </div>
-                              {palette.id === 'auto' && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                  AI-selected based on story emotion
-                                </p>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      </RadioGroup>
-                    </div>
-                    
-                    {/* Aspect Ratio */}
-                    <div className="p-4 rounded-xl bg-gradient-to-r from-pixar-orange/5 to-transparent border border-pixar-orange/10">
-                      <Label className="text-base mb-4 flex items-center font-medium">
-                        <VideoIcon className="mr-2 h-4 w-4 text-pixar-orange" />
-                        Output Format
-                      </Label>
-                      <RadioGroup value={aspectRatio} onValueChange={setAspectRatio} className="flex space-x-12 pt-2">
-                        <div className="flex flex-col items-center space-y-2">
-                          <div 
-                            className={`relative cursor-pointer transition-all ${
-                              aspectRatio === '16:9' ? 'scale-110' : 'opacity-70 hover:opacity-100'
-                            }`}
-                            onClick={() => setAspectRatio('16:9')}
-                          >
-                            <div className="aspect-video bg-gray-100 rounded-md overflow-hidden flex items-center justify-center w-40 border-2 border-gray-200">
-                              <VideoIcon className="h-8 w-8 text-gray-400" />
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <RadioGroupItem 
-                              value="16:9" 
-                              id="ratio-landscape"
-                              className="h-3.5 w-3.5 text-pixar-orange"
-                            />
-                            <Label htmlFor="ratio-landscape" className="ml-2 font-medium">Landscape (16:9)</Label>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-col items-center space-y-2">
-                          <div 
-                            className={`relative cursor-pointer transition-all ${
-                              aspectRatio === '9:16' ? 'scale-110' : 'opacity-70 hover:opacity-100'
-                            }`}
-                            onClick={() => setAspectRatio('9:16')}
-                          >
-                            <div className="relative w-20">
-                              <div className="aspect-[9/16] bg-gray-100 rounded-md overflow-hidden flex items-center justify-center border-2 border-gray-200">
-                                <Smartphone className="h-7 w-7 text-gray-400" />
-                              </div>
-                            </div>
-                          </div>
-                          <div className="flex items-center">
-                            <RadioGroupItem 
-                              value="9:16" 
-                              id="ratio-portrait"
-                              className="h-3.5 w-3.5 text-pixar-orange"
-                            />
-                            <Label htmlFor="ratio-portrait" className="ml-2 font-medium">Portrait (9:16)</Label>
-                          </div>
-                        </div>
-                      </RadioGroup>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* Animation Preview Card */}
-                <Card className="overflow-hidden border-pixar-blue/10 bg-white/70 backdrop-blur-sm shadow-xl rounded-2xl">
-                  <CardHeader className="bg-gradient-to-r from-pixar-blue/10 to-transparent pb-3 pt-6">
-                    <CardTitle className="flex items-center text-xl">
-                      <Film className="mr-3 h-5 w-5 text-pixar-blue" />
-                      Animation Preview
-                    </CardTitle>
-                    <CardDescription className="text-gray-500">
-                      See how your animation might appear
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex flex-col items-center justify-center p-6">
-                    <div 
-                      className={`${
-                        aspectRatio === '16:9' ? 'aspect-video w-full' : 'aspect-[9/16] w-2/3'
-                      } bg-gray-100 rounded-lg shadow-md overflow-hidden flex items-center justify-center mb-4 border border-gray-200`}
-                    >
-                      <div className="text-center p-6">
-                        <Film className="mx-auto h-12 w-12 text-gray-400 mb-3" />
-                        <p className="text-gray-500 font-medium">Preview will be generated soon</p>
-                        <p className="text-xs text-muted-foreground mt-2">
-                          Your animation will use the {colorPalette} color palette
-                        </p>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-3 gap-2 w-full mt-4">
-                      {scenes.slice(0, 3).map((scene, index) => (
-                        <div key={index} className="aspect-video bg-gray-100 rounded-md overflow-hidden relative border border-gray-200">
-                          <div className="absolute inset-0 flex items-center justify-center">
-                            <p className="text-xs text-muted-foreground">Scene {index + 1}</p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <CardFooter className="flex justify-center border-t pt-5 bg-gray-50">
-                    <Button variant="outline" className="border-gray-300 hover:bg-gray-100 transition-colors w-full" onClick={() => setShowPreview(true)}>
-                      <Play className="mr-2 h-4 w-4" />
-                      Open Full Preview
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
-            </motion.div>
-            
-            {/* Generate Button */}
-            <motion.div 
-              className="flex justify-end gap-4 mt-8"
-              whileHover={{ scale: 1.03 }}
-              transition={{ type: "spring", stiffness: 400, damping: 10 }}
-            >
-              <Button 
-                variant="outline"
-                onClick={() => setActiveTab('story')}
-                className="border border-pixar-blue/20 text-pixar-blue hover:bg-pixar-blue/5 transition-all"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Back to Story
-              </Button>
-              <Button 
-                onClick={handleGenerate}
-                className="bg-gradient-to-r from-pixar-blue to-pixar-purple text-white hover:from-pixar-darkblue hover:to-pixar-purple pixar-button rounded-xl py-6 text-lg font-medium shadow-lg hover:shadow-xl"
-              >
-                Generate Animation
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </motion.div>
-          </TabsContent>
-        </Tabs>
+
+        {/* Loading State */}
+        {isLoading && <StoryLoadingAnimation />}
       </div>
       
       {/* Preview Dialog */}
