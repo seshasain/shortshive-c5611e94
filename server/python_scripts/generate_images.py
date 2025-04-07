@@ -15,6 +15,12 @@ def save_binary_file(file_name, data):
 
 def generate(prompt, output_dir, story_id):
     try:
+        # Save prompt to debug file
+        debug_file = os.path.join(output_dir, f"{story_id}_prompt_debug.txt")
+        with open(debug_file, "w") as f:
+            f.write(f"PROMPT RECEIVED BY PYTHON SCRIPT:\n\n{prompt}")
+            f.write("\n\n---END OF PROMPT---\n")
+        
         # Create output directory if it doesn't exist
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
@@ -22,7 +28,8 @@ def generate(prompt, output_dir, story_id):
         # Get API key from environment variable
         api_key = os.getenv('GEMINI_API_KEY')
         if not api_key:
-            raise ValueError("GEMINI_API_KEY environment variable is not set")
+            print("ERROR: GEMINI_API_KEY environment variable is not set")
+            return False
             
         client = genai.Client(
             api_key=api_key,

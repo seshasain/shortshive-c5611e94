@@ -1,0 +1,119 @@
+PROMPT RECEIVED BY PYTHON SCRIPT:
+
+STORY: "Untitled Story"
+
+CHARACTERS:
+The following characters must maintain 100% consistent appearance across all scenes:
+
+CHARACTER: Buddy
+Description: Buddy is digging furiously in a flower bed, dirt flying everywhere.  Close up on Buddy's paws unearthing something papery from the soil.  The camera focuses on a rolled-up, aged-looking scroll tied with twine as Buddy proudly presents it, tail wagging.
+Buddy appears to be a pet/animal - ensure consistent animal appearance, fur color, and size across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+CHARACTER: Leo
+Description: Leo and Max watch in amusement from the porch steps.
+Ensure consistent clothing/outfit across all scenes
+Maintain consistent hairstyle across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+CHARACTER: Max
+Description: Leo and Max watch in amusement from the porch steps.
+Ensure consistent clothing/outfit across all scenes
+Maintain consistent hairstyle across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+CHARACTER: Close
+Description: Close up on Buddy's paws unearthing something papery from the soil.
+Close appears to be a pet/animal - ensure consistent animal appearance, fur color, and size across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+CHARACTER: It
+Description: It's a hand-drawn map on aged parchment, marked with 'X' and cryptic symbols.
+Ensure consistent clothing/outfit across all scenes
+Maintain consistent hairstyle across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+CHARACTER: They
+Description: They navigate past a towering oak tree, marked on the map as a landmark.
+Ensure consistent clothing/outfit across all scenes
+Maintain consistent hairstyle across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+CHARACTER: He
+Description: He and Leo exchange excited glances.
+Ensure consistent clothing/outfit across all scenes
+Maintain consistent hairstyle across all scenes
+Maintain exact same features, proportions, and characteristic details in every scene
+
+SCENES:
+SCENE 1:
+Duration: 10 seconds
+Visual Description: Open on a sunny backyard scene. Buddy is digging furiously in a flower bed, dirt flying everywhere. Leo and Max watch in amusement from the porch steps. Close up on Buddy's paws unearthing something papery from the soil. The camera focuses on a rolled-up, aged-looking scroll tied with twine as Buddy proudly presents it, tail wagging.
+Dialogue/Narration: It started like any other afternoon, until Buddy started digging... and digging...
+
+SCENE 2:
+Duration: 10 seconds
+Visual Description: Leo carefully unrolls the scroll on a wooden picnic table. It's a hand-drawn map on aged parchment, marked with 'X' and cryptic symbols. Max leans in close, eyes wide with wonder. Buddy sits beside them, panting excitedly, nudging the map with his nose.
+Dialogue/Narration: ...but this wasn't just any hole he was making. He'd found something incredible!
+
+SCENE 3:
+Duration: 10 seconds
+Visual Description: Close-up on the map details - winding lines representing paths, a cartoonish tree, and the big red 'X'. Leo points at the 'X' with his finger, tracing the lines. Max mimics him, his little hand following Leo's. Buddy barks softly, as if understanding the importance.
+Dialogue/Narration: A real treasure map! Leading to... adventure!
+
+SCENE 4:
+Duration: 10 seconds
+Visual Description: Transition to the boys and Buddy venturing into the 'wilds' of their backyard - overgrown bushes and trees forming a mini-forest. Leo, holding the map like a compass, leads the way. Max follows closely behind, tripping slightly on uneven ground but quickly recovering with a giggle. Buddy bounds ahead, sniffing the ground.
+Dialogue/Narration: Armed with their map, Leo and Max, with their trusty first mate Buddy, set off.
+
+SCENE 5:
+Duration: 10 seconds
+Visual Description: They navigate past a towering oak tree, marked on the map as a landmark. Leo checks the map against the real tree, nodding confidently. Max peers up at the massive tree trunk in awe. Buddy playfully circles the base of the tree, tail wagging.
+Dialogue/Narration: The map was surprisingly accurate. First landmark, check!
+
+SCENE 6:
+Duration: 10 seconds
+Visual Description: The scene shifts to a 'treacherous' stream – a garden hose left running creates a small puddle with trickling water. Max hesitates at the 'stream'. Leo helps Max carefully step over the puddle, offering a hand. Buddy splashes right through, unfazed, shaking water droplets everywhere.
+Dialogue/Narration: Next, a perilous river crossing! Or... a leaky hose.
+
+SCENE 7:
+Duration: 10 seconds
+Visual Description: They reach the 'X' marked on the map, beneath a small, unassuming rose bush. Leo consults the map one last time, then nods decisively. Max grabs a small toy shovel from his backpack, his face beaming with anticipation.
+Dialogue/Narration: According to the map, 'X' marked the spot. Time to dig!
+
+SCENE 8:
+Duration: 10 seconds
+Visual Description: Max digs enthusiastically at the base of the rose bush, kicking up loose soil. Leo helps him, using his hands to clear away dirt. Buddy watches intently, occasionally digging with his front paws, adding to the flurry of soil. 
+Dialogue/Narration: The anticipation was building. What riches awaited them?
+
+SCENE 9:
+Duration: 10 seconds
+Visual Description: Max's shovel hits something solid with a 'thunk'.  He and Leo exchange excited glances. They carefully clear away more soil, revealing a small, wooden chest, slightly weathered but intact. 
+Dialogue/Narration: And then... they found it! Buried treasure!
+
+SCENE 10:
+Duration: 10 seconds
+Visual Description: Leo and Max struggle to open the chest, finally succeeding with a creak.  Inside, instead of gold, are colorful, polished rocks and a handwritten note. Close-up on the note which reads: 'Congratulations Buccaneers! Treasure is adventure and friendship!'
+Dialogue/Narration: But inside... not gold.  Something even better.
+
+SCENE 11:
+Duration: 10 seconds
+Visual Description: Leo reads the note aloud to Max, who is initially surprised, then breaks into a wide smile, picking up a shiny blue rock. Leo smiles too, understanding dawning on his face. Buddy licks Max's face happily. They examine the rocks, their 'treasure', under the sunlight.
+Dialogue/Narration: The real treasure wasn't gold or jewels, but the adventure they had together. 
+
+SCENE 12:
+Duration: 10 seconds
+Visual Description: The final scene shows Leo, Max, and Buddy walking back towards the house, silhouetted against the golden light of late afternoon. Max clutches a few colorful rocks in his hand. Leo pats Buddy on the head. They are laughing, their voices fading slightly as the scene slowly fades to black.
+Dialogue/Narration: And that's the best treasure of all.
+
+ADMIN RULES:
+- Generate EXACTLY one high-quality image for each scene in Pixar-style 3D animation style
+- Create ultra-high-quality cinematic visuals for every scene
+- Ensure you generate meaningful visuals that clearly depict what's happening in the story
+- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors
+- Focus on the primary action described in each scene's visual description
+- Create images that work together as a cohesive visual narrative
+- Ensure perfect character consistency - this is the MOST IMPORTANT requirement
+
+
+---END OF PROMPT---

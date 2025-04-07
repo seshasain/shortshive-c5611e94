@@ -61,35 +61,44 @@ app.post('/api/generate-animation', async (req, res) => {
     console.log('Animation generation requested');
     console.log('Request body structure:', JSON.stringify({
         story_id: req.body.story_id,
-        scenes_count: req.body.scenes?.length,
-        visualSettings: Object.keys(req.body.visualSettings || {})
+        scenes_count: req.body.scenes?.length
     }));
     
     // Validate request body
-    const { story_id, scenes, visualSettings } = req.body;
+    const { story_id } = req.body;
     
-    if (!story_id || !scenes || !Array.isArray(scenes) || scenes.length === 0) {
-        console.error('Invalid request body:', req.body);
+    if (!story_id) {
+        console.error('Invalid request body: missing story_id', req.body);
         return res.status(400).json({
             success: false,
-            error: 'Invalid request: story_id and scenes array are required'
+            error: 'Invalid request: story_id is required'
+        });
+    }
+    
+    // Construct the complete story data object
+    const storyData = { ...req.body };
+    
+    // Validate required story elements
+    if (!storyData.scenes || !Array.isArray(storyData.scenes) || storyData.scenes.length === 0) {
+        console.error('Invalid request body: missing or invalid scenes array', storyData);
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid request: scenes array is required and must not be empty'
         });
     }
     
     try {
-        console.log(`Generating animation for story ${story_id} with ${scenes.length} scenes`);
-        console.log('Visual settings:', JSON.stringify(visualSettings, null, 2));
-        
+        console.log(`Generating animation for story ${story_id} with ${storyData.scenes.length} scenes`);
         // Track this story in our processing list
         currentlyProcessingStories[story_id] = {
             startTime: new Date(),
-            totalScenes: scenes.length,
+            totalScenes: storyData.scenes.length,
             completedScenes: 0,
             status: 'processing'
         };
         
-        // Call the image generator function
-        const result = await imageGenerator.generateStoryImages(story_id, scenes, visualSettings);
+        // Call the image generator function with complete story data
+        const result = await imageGenerator.generateStoryImages(story_id, storyData);
         
         // Update the story status
         if (result.success) {
@@ -144,7 +153,7 @@ app.get('/api/animation-status/:storyId', async (req, res) => {
   }
   
   try {
-    console.log(`Checking animation status for story ${storyId}`);
+    
     
     // Check if the generated images directory exists
     if (!fs.existsSync(outputDir)) {

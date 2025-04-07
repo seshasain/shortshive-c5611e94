@@ -46,20 +46,23 @@ const ai = new GoogleGenAI({ apiKey });
 /**
  * Generate images for all scenes in a story using the Python script
  * @param {string} storyId - The ID of the story
- * @param {Array} scenes - Array of scene objects
- * @param {Object} visualSettings - The visual settings for the scenes
+ * @param {Object} storyData - Complete story data including title, logline, scenes, characters, etc.
+ * @param {Object} adminRules - Optional rules for image generation
  * @returns {Promise<{success: boolean, images: Array, failedScenes: Array}>}
  */
-async function generateStoryImages(storyId, scenes, visualSettings) {
+async function generateStoryImages(storyId, storyData, adminRules = {}) {
   try {
     // Input validation
-    if (!storyId || !scenes) {
-      throw new Error('Story ID and scenes are required');
+    if (!storyId || !storyData) {
+      throw new Error('Story ID and storyData are required');
     }
     
-    if (!Array.isArray(scenes) || scenes.length === 0) {
-      throw new Error('Scenes must be a non-empty array');
+    if (!storyData.scenes || !Array.isArray(storyData.scenes) || storyData.scenes.length === 0) {
+      throw new Error('Story must have a non-empty scenes array');
     }
+    
+    const scenes = storyData.scenes;
+    const visualSettings = storyData.visualSettings || {};
     
     // Normalize all scenes
     const normalizedScenes = scenes.map(scene => ({
@@ -100,106 +103,79 @@ async function generateStoryImages(storyId, scenes, visualSettings) {
     }
     
     const aspectRatio = visualSettings?.aspectRatio || '16:9';
-    const title = visualSettings?.title || "Story Title";
-    const characters = visualSettings?.characters || [];
-    
-    // Create a prompt for Python script
-    let sceneDescriptions = normalizedScenes.map((scene, index) => {
-      // Get the scene content from either the content property or dialogueOrNarration
-      // Also use visualDescription if available
-      const sceneContent = scene.content || scene.dialogueOrNarration || '';
-      const visualDesc = scene.visualDescription || '';
-      
-      // Combine dialogue and visual description for a richer scene prompt
-      let description = '';
-      
-      // If we have both visual description and dialogue, format them clearly
-      if (visualDesc && visualDesc !== sceneContent) {
-        description = `${visualDesc}\n\nDialogue/Narration: ${sceneContent}`;
-      } else if (visualDesc) {
-        description = visualDesc;
-      } else {
-        description = sceneContent;
-      }
-      
-      return `SCENE ${index + 1}:\n${description}`;
-    }).join('\n\n');
-    
-    // Determine if we have a full story object or just scenes
-    const hasFullStoryData = visualSettings?.title && visualSettings?.characters;
-    
-    // Based on the visualization style, create appropriate prompt instructions
-    let styleInstructions = '';
-    if (visualSettings?.colorPalette === 'cinematic') {
-      styleInstructions = `
-- Create realistic, cinematic-quality images with dramatic lighting
-- Use professional cinematography techniques and framing
-- Ensure the emotional tone of each scene is captured through lighting, angles, and composition
-- Pay attention to details of environments and character expressions
-- Use a color palette that enhances the mood of each scene
-- Make sure characters are consistently portrayed across all scenes
-`;
-    } else if (visualSettings?.colorPalette === 'anime') {
-      styleInstructions = `
-- Create vibrant anime-style images with distinctive character designs
-- Use expressive features and dynamic compositions typical of anime
-- Incorporate anime-style shading and color techniques
-- Emphasize emotional expressions through anime visual conventions
-- Ensure consistent character appearance across all scenes
-`;
-    } else if (visualSettings?.colorPalette === 'cartoon') {
-      styleInstructions = `
-- Create colorful cartoon-style images with bold outlines
-- Use exaggerated expressions and simplified backgrounds
-- Make characters distinctively stylized with recognizable features
-- Employ bright, saturated colors appropriate for cartoons
-- Ensure consistent character appearance across all scenes
-`;
-    } else {
-      // Default Pixar style
-      styleInstructions = `
-- Create Pixar-style 3D animation with soft, expressive characters
-- Use warm lighting and carefully crafted environments
-- Pay attention to small details that bring the scene to life
-- Ensure characters have emotive faces that convey their feelings clearly
-- Create a sense of wonder and magic through lighting and composition
-`;
+
+    // Extract key story elements
+    const title = storyData.title || "Untitled Story";
+    const logline = storyData.logline || "";
+    const characters = storyData.characters || [];
+    const emotion = storyData.settings?.emotion || "Neutral";
+
+    // Format the story data with clear sections and line breaks
+    let promptForPython = `STORY: "${title}"\n\n`;
+
+    if (logline) {
+      promptForPython += `LOGLINE: ${logline}\n\n`;
     }
-    
-    // Build an enhanced prompt for better image generation
-    let promptForPython = `Generate a series of ${scenes.length} high-quality ${visualStyle} images for a story titled "${title}".\n\n`;
-    
-    // Add specific character information if available
+
+    if (storyData.settings) {
+      promptForPython += `SETTINGS:\n`;
+      for (const [key, value] of Object.entries(storyData.settings)) {
+        promptForPython += `- ${key}: ${value}\n`;
+      }
+      promptForPython += `\n`;
+    }
+
     if (characters && characters.length > 0) {
       promptForPython += `CHARACTERS:\n`;
-      promptForPython += characters.map(c => {
-        // Enhance character descriptions with visual details
-        let enhancedDesc = c.description || `A character named ${c.name}`;
-        return `- ${c.name}: ${enhancedDesc}`;
-      }).join('\n');
-      promptForPython += `\n\n`;
-    }
-    
-    promptForPython += `STYLE SPECIFICATIONS:\n`;
-    promptForPython += `- ${visualStyle}\n`;
-    promptForPython += `- ${styleDetails}\n`;
-    promptForPython += `- Aspect ratio: ${aspectRatio}\n`;
-    promptForPython += styleInstructions;
-    promptForPython += `- Ensure consistent visual style across all images\n\n`;
-    
-    // Add admin rules for image generation
-    promptForPython += `ADMIN RULES:\n`;
-    promptForPython += `- Generate EXACTLY one image for each scene in ultra high quality ${visualStyle} style\n`;
-    promptForPython += `- Each image should focus on the primary action of the scene - the most informative moment\n`;
-    promptForPython += `- Ensure you generate meaningful visual for understanding what's happening in the story\n`;
-    promptForPython += `- Each image should be instantly understandable with rich visual storytelling\n`;
-    promptForPython += `- Maintain consistent character appearance between scenes\n`;
-    promptForPython += `- Use composition to focus on the key elements of each scene\n`;
-    promptForPython += `- Create image for scene when that scene is viewed together as a cohesive visual narrative \n\n`;
-    
-    // Add the scenes
-    promptForPython += `SCENES TO ILLUSTRATE:\n\n${sceneDescriptions}`;
+      promptForPython += `The following characters must maintain 100% consistent appearance across all scenes:\n\n`;
       
+      for (const character of characters) {
+        promptForPython += `CHARACTER: ${character.name}\n`;
+        promptForPython += `Description: ${character.description}\n`;
+        
+        // If the description doesn't specifically mention physical traits, add default guidance
+        if (!character.description.toLowerCase().includes('wear') && 
+            !character.description.toLowerCase().includes('cloth') &&
+            !character.description.toLowerCase().includes('outfit')) {
+          promptForPython += `Ensure consistent clothing/outfit across all scenes\n`;
+        }
+        
+        if (!character.description.toLowerCase().includes('hair') && 
+            !character.description.toLowerCase().includes('hairstyle')) {
+          promptForPython += `Maintain consistent hairstyle across all scenes\n`;
+        }
+        
+        promptForPython += `Maintain exact same facial features, body proportions, and characteristic details in every scene\n\n`;
+      }
+    }
+
+    promptForPython += `SCENES:\n`;
+    for (const scene of scenes) {
+      promptForPython += `SCENE ${scene.sceneNumber || scenes.indexOf(scene) + 1}:\n`;
+      promptForPython += `Duration: ${scene.durationEstimate || 10} seconds\n`;
+      
+      if (scene.visualDescription) {
+        promptForPython += `Visual Description: ${scene.visualDescription}\n`;
+      }
+      
+      if (scene.dialogueOrNarration) {
+        promptForPython += `Dialogue/Narration: ${scene.dialogueOrNarration}\n`;
+      }
+      
+      promptForPython += `\n`;
+    }
+
+    promptForPython += `ADMIN RULES:\n`;
+    promptForPython += `- Generate EXACTLY one high-quality image for each scene in ${visualStyle} style\n`;
+    promptForPython += `- Create ultra-high-quality cinematic visuals for every scene\n`;
+    promptForPython += `- Ensure you generate meaningful visuals that clearly depict what's happening in the story\n`;
+    promptForPython += `- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors\n`;
+    promptForPython += `- Focus on the primary action described in each scene's visual description\n`;
+    promptForPython += `- Create images that work together as a cohesive visual narrative\n`;
+    promptForPython += `- Ensure perfect character consistency - this is the MOST IMPORTANT requirement\n`;
+
+    console.log(`Created formatted prompt with ${promptForPython.length} characters`);
+
     // Find the Python script
     const scriptPath = path.join(pythonScriptsDir, 'generate_images.py');
     if (!fs.existsSync(scriptPath)) {
