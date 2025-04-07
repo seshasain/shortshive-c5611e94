@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { refineStory } from '@/services/api';
 import { saveStory, checkSavedStory, resumeSavedStory } from '@/services/savedStory';
@@ -63,6 +62,7 @@ const StoryReview = () => {
   const location = useLocation();
   const { toast } = useToast();
   const [storyId, setStoryId] = useState<string | undefined>(useParams().id);
+  const [theme, setTheme] = useState<'light' | 'dark'>('light');
   
   // Default values for when there's no state
   const [storyText, setStoryText] = useState("");
@@ -91,6 +91,22 @@ const StoryReview = () => {
     'Fear': 'fantasy',
     'Love': 'nature',
   };
+  
+  // Add theme effect
+  useEffect(() => {
+    // Check if dark mode is enabled
+    const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(isDarkMode ? 'dark' : 'light');
+    
+    // Listen for theme changes
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      setTheme(e.matches ? 'dark' : 'light');
+    };
+    
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
   
   // Process data from StoryBuilder when component mounts
   useEffect(() => {
@@ -255,6 +271,13 @@ const StoryReview = () => {
       // Generate a story ID if one doesn't exist
       const generatedStoryId = storyId || uuidv4();
       
+      // Always ensure the story exists in the stories table first
+      if (!storyId) {
+        console.log('No existing story ID found, generated a new one:', generatedStoryId);
+        // Update the state with the new ID
+        setStoryId(generatedStoryId);
+      }
+      
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -262,20 +285,44 @@ const StoryReview = () => {
         throw new Error('User not authenticated');
       }
       
-      // Only store in stories table
-      console.log('Creating/updating story record in stories table');
-      const { error: storyError } = await supabase
+      // Create or verify the story exists in the stories table BEFORE saving to saved_stories
+      console.log('Ensuring story record exists in stories table');
+      const { data: existingStory, error: checkStoryError } = await supabase
         .from('stories')
-        .upsert({
-          id: generatedStoryId,
-          title: storyTitle || 'Untitled Story',
-          description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
-          user_id: user.id
-        });
+        .select('id, user_id')
+        .eq('id', generatedStoryId)
+        .maybeSingle();
+        
+      if (checkStoryError) {
+        console.error('Error checking story record:', checkStoryError);
+        throw checkStoryError;
+      }
       
-      if (storyError) {
-        console.error('Error creating/updating story record:', storyError);
-        throw storyError;
+      if (!existingStory) {
+        // Create a new story in the stories table
+        console.log('Creating new story record in stories table');
+        const { error: storyError } = await supabase
+          .from('stories')
+          .insert({
+            id: generatedStoryId, // Use the generated UUID as the story ID
+            title: storyTitle || 'Untitled Story',
+            description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
+            user_id: user.id
+          });
+        
+        if (storyError) {
+          console.error('Error creating story record:', storyError);
+          throw storyError;
+        }
+        
+        console.log('Successfully created story record with ID:', generatedStoryId);
+      } else {
+        console.log('Story record already exists with ID:', generatedStoryId);
+        // Verify ownership
+        if (existingStory.user_id !== user.id) {
+          console.error('Story exists but belongs to another user');
+          throw new Error('You do not have permission to modify this story');
+        }
       }
       
       // Update the URL without causing a page reload if we just created a new story
@@ -287,13 +334,13 @@ const StoryReview = () => {
       
       // Prepare the animation data
       const animationData = {
-        story_id: generatedStoryId,
+        story_id: generatedStoryId, // Use the generated or existing ID
         storyContent: storyText,
         scenes: scenes.map(scene => ({
           sceneNumber: parseInt(scene.id),
           dialogueOrNarration: scene.text,
           visualDescription: scene.visualDescription || `A scene showing: ${scene.text.substring(0, 100)}...`,
-          durationEstimate: 10
+          durationEstimate: 10 // Default duration in seconds
         })),
         visualSettings: {
           colorPalette,
@@ -304,12 +351,56 @@ const StoryReview = () => {
         timestamp: new Date().toISOString()
       };
 
-      // Navigate to the animation progress page
+      console.log('Animation data prepared:', { 
+        story_id: animationData.story_id,
+        scenesCount: animationData.scenes.length,
+        visualSettings: animationData.visualSettings
+      });
+
+      // Save the current state before generating - use the generatedStoryId
+      console.log('Saving current state before generation for story ID:', generatedStoryId);
+      try {
+        const { error: saveError } = await saveStory(
+          generatedStoryId,
+          {
+            title: storyTitle || 'Untitled Story',
+            logline: storyText,
+            scenes: animationData.scenes,
+            settings: {
+              colorPalette,
+              aspectRatio
+            }
+          }
+        );
+
+        if (saveError) {
+          console.error('Error saving story before generation:', saveError);
+          toast({
+            title: 'Error saving story',
+            description: 'Could not save story state. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        console.log('Story state saved successfully before generation');
+      } catch (saveError) {
+        console.error('Exception during story save:', saveError);
+        toast({
+          title: 'Error saving story',
+          description: 'An unexpected error occurred while saving. Please try again.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // CHANGE: Immediately navigate to the animation progress page
+      // This creates a better user experience - show the loading UI right away
       navigate('/generating', { 
         state: { 
           storyId: generatedStoryId,
           title: storyTitle || 'Untitled Story',
           generationStarted: new Date().toISOString(),
+          // Initial empty state
           images: [],
           status: 'processing',
           progress: 0
@@ -322,26 +413,58 @@ const StoryReview = () => {
         variant: 'default',
       });
 
-      // Send the request to the server API
+      // Send the request to the server API after navigation
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      console.log('Sending animation generation request to:', API_URL);
+      console.log('Environment variables:', { 
+        VITE_API_URL: import.meta.env.VITE_API_URL,
+        fallbackURL: 'http://localhost:3000',
+        finalURL: `${API_URL}/api/generate-animation`
+      });
+      
+      // Check if server is reachable before proceeding
       const isServerHealthy = await checkServerHealth(API_URL);
       if (!isServerHealthy) {
         throw new Error('Server appears to be offline or unreachable. Please check your connection and try again.');
       }
       
-      const response = await fetch(`${API_URL}/api/generate-animation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(animationData),
-      });
-      
-      const responseData = await response.json();
-      if (!response.ok || !responseData.success) {
-        throw new Error(responseData.error || 'Failed to generate animation');
-      }
+      try {
+        console.log('Starting fetch request to generate animation');
+        const response = await fetch(`${API_URL}/api/generate-animation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(animationData),
+        });
+        
+        console.log('Fetch request completed with status:', response.status);
+        
+        let responseData;
+        try {
+          responseData = await response.json();
+          console.log('Response data parsed successfully:', responseData);
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          throw new Error('Failed to parse server response');
+        }
 
+        if (!response.ok || !responseData.success) {
+          console.error('Server returned error:', responseData);
+          throw new Error(responseData.error || 'Failed to generate animation');
+        }
+
+        console.log('Animation generation request successful');
+      } catch (fetchError) {
+        console.error('Fetch operation failed:', fetchError);
+        console.error('Fetch error details:', {
+          name: fetchError.name,
+          message: fetchError.message,
+          stack: fetchError.stack,
+          cause: fetchError.cause
+        });
+        throw fetchError; // Re-throw to be caught by the outer catch block
+      }
     } catch (error) {
       console.error('Error generating animation:', error);
       toast({
@@ -349,6 +472,7 @@ const StoryReview = () => {
         description: error.message || 'Could not generate the animation. Please try again.',
         variant: 'destructive',
       });
+      // Navigate back to story review on error
       if (storyId) {
         navigate(`/review-story/${storyId}`);
       } else {
@@ -372,6 +496,7 @@ const StoryReview = () => {
   };
   
   const handleConfirmSave = async () => {
+    // Set the saving state
     setIsSaving(true);
     
     try {
@@ -383,8 +508,9 @@ const StoryReview = () => {
       
       let storyIdToUse = storyId;
       
-      // Create or update story in stories table
+      // Only create a new story if we don't have an existing storyId
       if (!storyIdToUse) {
+        // Create a new story
         const { data: newStory, error: storyError } = await supabase
           .from('stories')
           .insert({
@@ -398,6 +524,7 @@ const StoryReview = () => {
         if (storyError) throw storyError;
         storyIdToUse = newStory.id;
       } else {
+        // Update the existing story
         const { error: updateError } = await supabase
           .from('stories')
           .update({
@@ -409,47 +536,53 @@ const StoryReview = () => {
         if (updateError) throw updateError;
       }
       
-      // Format scenes for saved_stories table
+      // Format the data according to the required schema
       const formattedScenes = scenes.map(scene => ({
         sceneNumber: parseInt(scene.id),
-        durationEstimate: 10,
+        durationEstimate: 10, // Default duration
         visualDescription: scene.visualDescription || 'Visual description placeholder',
         dialogueOrNarration: scene.text
       }));
 
-      // Save to saved_stories table
+      // Prepare the generation state to save in specified format
+      const generationState = {
+        title: storyTitle || saveName,
+        logline: storyText,
+        settings: {
+          emotion: "Neutral", // Default values if not specified
+          language: "English",
+          voiceStyle: "Conversational",
+          duration: formattedScenes.length * 10, // Rough estimate based on scenes
+          addHook: true
+        },
+        characters: [
+          // We could extract characters from the story, but for now use a placeholder
+          {
+            name: "Main Character",
+            description: "Character from the story"
+          }
+        ],
+        scenes: formattedScenes
+      };
+      
+      // Save to the saved_stories table
       const { error: savedStoryError } = await saveStory(
         storyIdToUse,
-        {
-          title: storyTitle || saveName,
-          logline: storyText,
-          settings: {
-            emotion: "Neutral",
-            language: "English",
-            voiceStyle: "Conversational",
-            duration: formattedScenes.length * 10,
-            addHook: true
-          },
-          characters: [
-            {
-              name: "Main Character",
-              description: "Character from the story"
-            }
-          ],
-          scenes: formattedScenes
-        },
+        generationState,
         `Updated on ${new Date().toLocaleString()}`
       );
       
       if (savedStoryError) throw savedStoryError;
       
-      // Close dialog and show success message
+      // Close the dialog and show success message
       setSaveDialogOpen(false);
       setSaveSuccess(true);
       
-      // Update local state and URL if needed
+      // Don't navigate away, just update the local state if needed
       if (!storyId) {
+        // Update the storyId state to track the new story
         setStoryId(storyIdToUse);
+        // Update the URL without full page navigation
         navigate(`/review-story/${storyIdToUse}`, { replace: true });
       }
       
@@ -461,6 +594,7 @@ const StoryReview = () => {
         variant: "default",
       });
       
+      // Hide success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);
@@ -518,75 +652,48 @@ const StoryReview = () => {
   return (
     <DashboardLayout>
       <div className="container-custom py-16">
-        {/* Animated background elements - match StoryBuilder */}
+        {/* Simplified static background */}
         <div className="absolute top-0 right-0 -z-10 w-full h-full overflow-hidden">
-          <motion.div 
-            animate={{ 
-              y: [0, -25, 0],
-              opacity: [0.08, 0.15, 0.08]
-            }} 
-            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
-            className="absolute top-40 right-10 w-96 h-96 rounded-full bg-pixar-orange/20 blur-3xl"
-          />
-          <motion.div 
-            animate={{ 
-              y: [0, 25, 0],
-              opacity: [0.07, 0.12, 0.07]
-            }} 
-            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 1 }}
-            className="absolute bottom-20 left-10 w-[500px] h-[500px] rounded-full bg-pixar-blue/20 blur-3xl"
-          />
+          <div className="absolute top-40 right-10 w-96 h-96 rounded-full bg-pixar-orange/10 dark:bg-pixar-orange/5" />
+          <div className="absolute bottom-20 left-10 w-[500px] h-[500px] rounded-full bg-pixar-blue/10 dark:bg-pixar-blue/5" />
         </div>
         
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12"
-        >
+        {/* Remove motion.div and use regular div */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-12">
           <div>
-            <motion.div
-              initial={{ opacity: 0, scale: 0.96 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5, delay: 0.1 }}
-              className="inline-block mb-3 px-4 py-2 rounded-full bg-white shadow-lg backdrop-blur-sm border border-pixar-blue/10"
-            >
+            <div className="inline-block mb-3 px-4 py-2 rounded-full bg-white dark:bg-gray-800 shadow-lg border border-pixar-blue/10 dark:border-pixar-blue/20">
               <div className="flex items-center space-x-2">
-                <Sparkles className="h-5 w-5 text-pixar-purple" />
-                <span className="text-sm font-medium text-gray-700">Refine Your Animation</span>
+                <Sparkles className="h-5 w-5 text-pixar-purple dark:text-pixar-purple/80" />
+                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">Refine Your Animation</span>
               </div>
-            </motion.div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight">
+            </div>
+            <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight dark:text-white">
               {storyTitle ? `"${storyTitle}"` : 'Review Your Story'}
             </h1>
-            <p className="text-lg text-muted-foreground max-w-xl">
+            <p className="text-lg text-muted-foreground dark:text-gray-300 max-w-xl">
               Review, edit, and customize your masterpiece before bringing it to life with animation
             </p>
           </div>
           
-        </motion.div>
+        </div>
         
         {/* Main Content */}
         <div className="space-y-6">
-          {/* Story Header Section */}
+          {/* Story Header Section - Remove motion.div */}
           {storyType === 'ai-prompt' && (
-            <motion.div 
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="flex items-center gap-4 p-4 bg-gradient-to-r from-pixar-blue/5 via-pixar-purple/5 to-transparent rounded-2xl border border-pixar-blue/10"
-            >
-              <div className="flex-shrink-0 p-3 bg-white/50 rounded-xl">
-                <Sparkles className="h-6 w-6 text-pixar-blue" />
+            <div className="flex items-center gap-4 p-4 bg-gradient-to-r from-pixar-blue/5 via-pixar-purple/5 to-transparent dark:from-pixar-blue/10 dark:via-pixar-purple/10 dark:to-transparent rounded-2xl border border-pixar-blue/10 dark:border-pixar-blue/20">
+              <div className="flex-shrink-0 p-3 bg-white/50 dark:bg-gray-800/50 rounded-xl">
+                <Sparkles className="h-6 w-6 text-pixar-blue dark:text-pixar-blue/80" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 flex items-center text-lg">
+                <h3 className="font-semibold text-gray-900 dark:text-white flex items-center text-lg">
                   AI-Generated Story
                 </h3>
-                <p className="text-sm text-gray-600 mt-1">
-                  Based on prompt: <span className="font-medium text-gray-800 bg-white/50 px-2 py-0.5 rounded-md">{promptText}</span>
+                <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">
+                  Based on prompt: <span className="font-medium text-gray-800 dark:text-gray-200 bg-white/50 dark:bg-gray-800/50 px-2 py-0.5 rounded-md">{promptText}</span>
                 </p>
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Main Grid Layout */}
@@ -594,21 +701,21 @@ const StoryReview = () => {
             {/* Left Column: Story Content */}
             <div className="col-span-12 lg:col-span-5 space-y-6">
               {/* Complete Story Section */}
-              <Card className="border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg">
-                <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent">
+              <Card className="border-pixar-blue/10 dark:border-pixar-blue/20 bg-white/80 dark:bg-gray-800/80 shadow-lg">
+                <CardHeader className="border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50/80 to-transparent dark:from-gray-800/80">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-pixar-blue/5 rounded-lg">
-                        <Edit className="h-5 w-5 text-pixar-blue" />
+                      <div className="p-2 bg-pixar-blue/5 dark:bg-pixar-blue/10 rounded-lg">
+                        <Edit className="h-5 w-5 text-pixar-blue dark:text-pixar-blue/80" />
                       </div>
                       <div>
-                        <CardTitle className="text-lg font-semibold">Story Content</CardTitle>
-                        <CardDescription className="text-sm text-gray-500">
+                        <CardTitle className="text-lg font-semibold dark:text-white">Story Content</CardTitle>
+                        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">
                           {storyText.length > 0 ? `${storyText.split(' ').length} words` : 'Edit your narrative'}
                         </CardDescription>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-pixar-purple hover:text-pixar-purple/80">
+                    <Button variant="ghost" size="sm" className="text-pixar-purple dark:text-pixar-purple/80 hover:text-pixar-purple/60">
                       <Wand2 className="h-4 w-4 mr-2" />
                       Enhance
                     </Button>
@@ -623,7 +730,7 @@ const StoryReview = () => {
                     <Textarea 
                       value={storyText} 
                       onChange={(e) => setStoryText(e.target.value)}
-                      className="absolute inset-0 w-full h-full resize-none border-gray-200 focus:border-pixar-blue/20 bg-white/70 text-gray-700 text-base leading-relaxed overflow-auto scrollbar-thin scrollbar-thumb-pixar-blue/20 scrollbar-track-transparent hover:scrollbar-thumb-pixar-blue/30"
+                      className="absolute inset-0 w-full h-full resize-none border-gray-200 dark:border-gray-700 focus:border-pixar-blue/20 dark:focus:border-pixar-blue/40 bg-white/70 dark:bg-gray-800/70 text-gray-700 dark:text-gray-200 text-base leading-relaxed overflow-auto scrollbar-thin scrollbar-thumb-pixar-blue/20 dark:scrollbar-thumb-pixar-blue/40 scrollbar-track-transparent hover:scrollbar-thumb-pixar-blue/30 dark:hover:scrollbar-thumb-pixar-blue/50 placeholder:text-gray-400 dark:placeholder:text-gray-500"
                       placeholder="Enter your story content here..."
                     />
                   </div>
@@ -633,24 +740,24 @@ const StoryReview = () => {
 
             {/* Right Column: Scene Breakdown */}
             <div className="col-span-12 lg:col-span-7">
-              <Card className="border-pixar-blue/10 bg-white/80 backdrop-blur-sm shadow-lg">
-                <CardHeader className="border-b border-gray-100 bg-gradient-to-r from-gray-50/80 to-transparent">
+              <Card className="border-pixar-blue/10 dark:border-pixar-blue/20 bg-white/80 dark:bg-gray-800/80 shadow-lg">
+                <CardHeader className="border-b border-gray-100 dark:border-gray-700 bg-gradient-to-r from-gray-50/80 to-transparent dark:from-gray-800/80">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <div className="p-2 bg-pixar-blue/5 rounded-lg">
-                        <Film className="h-5 w-5 text-pixar-blue" />
+                      <div className="p-2 bg-pixar-blue/5 dark:bg-pixar-blue/10 rounded-lg">
+                        <Film className="h-5 w-5 text-pixar-blue dark:text-pixar-blue/80" />
                       </div>
                       <div>
                         <div className="flex items-center gap-3">
-                          <CardTitle className="text-lg font-semibold">Scene Breakdown</CardTitle>
-                          <Badge variant="secondary" className="bg-gray-100/80 text-gray-600 font-medium">
+                          <CardTitle className="text-lg font-semibold dark:text-white">Scene Breakdown</CardTitle>
+                          <Badge variant="secondary" className="bg-gray-100/80 dark:bg-gray-700/80 text-gray-600 dark:text-gray-300 font-medium">
                             {scenes.length} scenes
                           </Badge>
                         </div>
-                        <CardDescription className="text-sm text-gray-500">Manage your animation scenes</CardDescription>
+                        <CardDescription className="text-sm text-gray-500 dark:text-gray-400">Manage your animation scenes</CardDescription>
                       </div>
                     </div>
-                    <Button variant="ghost" size="sm" className="text-pixar-purple hover:text-pixar-purple/80">
+                    <Button variant="ghost" size="sm" className="text-pixar-purple dark:text-pixar-purple/80 hover:text-pixar-purple/60">
                       <Wand2 className="h-4 w-4 mr-2" />
                       Regenerate
                     </Button>
@@ -666,32 +773,33 @@ const StoryReview = () => {
                         index={index}
                         onEdit={handleEditScene}
                         delay={index * 0.1}
+                        theme={theme}
                       />
                     ))}
                   </div>
 
                   {/* Visual Settings Section */}
-                  <div className="p-4 bg-gray-50/80 rounded-lg border border-gray-100">
+                  <div className="p-4 bg-gray-50/80 dark:bg-gray-800/80 rounded-lg border border-gray-100 dark:border-gray-700">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-2">
-                        <Settings className="h-4 w-4 text-pixar-blue" />
-                        <h3 className="text-sm font-medium text-gray-700">Visual Settings</h3>
+                        <Settings className="h-4 w-4 text-pixar-blue dark:text-pixar-blue/80" />
+                        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-200">Visual Settings</h3>
                       </div>
                     </div>
                     <div className="flex flex-col md:flex-row gap-4">
                       {/* Visual Style Selection */}
                       <div className="w-full md:w-2/3 space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium text-gray-600">
-                          <Palette className="h-4 w-4 text-pixar-blue" />
+                        <Label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <Palette className="h-4 w-4 text-pixar-blue dark:text-pixar-blue/80" />
                           Choose Visual Style
                         </Label>
                         <Select value={colorPalette} onValueChange={setColorPalette}>
-                          <SelectTrigger className="w-full bg-white border-pixar-blue/20 h-10">
+                          <SelectTrigger className="w-full bg-white dark:bg-gray-800 border-pixar-blue/20 dark:border-pixar-blue/40 h-10">
                             <SelectValue>
                               {colorPalette === 'pixar' && (
                                 <div className="flex items-center gap-2">
-                                  <Film className="h-4 w-4 text-pixar-blue" />
-                                  <span>3D Pixar / Disney Style</span>
+                                  <Film className="h-4 w-4 text-pixar-blue dark:text-pixar-blue/80" />
+                                  <span className="dark:text-gray-200">3D Pixar / Disney Style</span>
                                 </div>
                               )}
                               {colorPalette === 'cinematic' && (
@@ -714,7 +822,7 @@ const StoryReview = () => {
                               )}
                             </SelectValue>
                           </SelectTrigger>
-                          <SelectContent>
+                          <SelectContent className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                             <SelectItem value="pixar" className="py-2">
                               <div className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2">
@@ -768,8 +876,8 @@ const StoryReview = () => {
 
                       {/* Video Format */}
                       <div className="w-full md:w-1/3 space-y-2">
-                        <Label className="flex items-center gap-2 text-sm font-medium text-gray-600">
-                          <VideoIcon className="h-4 w-4 text-pixar-orange" />
+                        <Label className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
+                          <VideoIcon className="h-4 w-4 text-pixar-orange dark:text-pixar-orange/80" />
                           Video Format
                         </Label>
                         <div className="flex gap-2 h-10">
@@ -777,22 +885,22 @@ const StoryReview = () => {
                             onClick={() => setAspectRatio('16:9')}
                             className={`flex-1 flex items-center justify-center gap-1.5 cursor-pointer rounded-md border transition-all
                                     ${aspectRatio === '16:9' 
-                                      ? 'border-pixar-blue bg-pixar-blue/5' 
-                                      : 'border-gray-200 hover:border-gray-300'}`}
+                                      ? 'border-pixar-blue bg-pixar-blue/5 dark:bg-pixar-blue/10' 
+                                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
                           >
-                            <Monitor className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-medium text-gray-600">16:9</span>
+                            <Monitor className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">16:9</span>
                           </div>
                           
                           <div 
                             onClick={() => setAspectRatio('9:16')}
                             className={`flex-1 flex items-center justify-center gap-1.5 cursor-pointer rounded-md border transition-all
                                     ${aspectRatio === '9:16'
-                                      ? 'border-pixar-blue bg-pixar-blue/5'
-                                      : 'border-gray-200 hover:border-gray-300'}`}
+                                      ? 'border-pixar-blue bg-pixar-blue/5 dark:bg-pixar-blue/10'
+                                      : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'}`}
                           >
-                            <Smartphone className="h-4 w-4 text-gray-500" />
-                            <span className="text-sm font-medium text-gray-600">9:16</span>
+                            <Smartphone className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                            <span className="text-sm font-medium text-gray-600 dark:text-gray-300">9:16</span>
                           </div>
                         </div>
                       </div>
@@ -804,13 +912,13 @@ const StoryReview = () => {
           </div>
 
           {/* Bottom Action Bar */}
-          <div className="fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-md border-t border-gray-200 shadow-lg z-50">
+          <div className="fixed bottom-0 left-0 right-0 bg-white/80 dark:bg-gray-800/80 border-t border-gray-200 dark:border-gray-700 shadow-lg z-50">
             <div className="container-custom py-4">
               <div className="flex items-center justify-between">
                 <Button 
                   variant="outline" 
                   onClick={handleBack}
-                  className="border-gray-300 hover:bg-gray-50"
+                  className="border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Back to Story Builder
@@ -819,7 +927,7 @@ const StoryReview = () => {
                   <Button
                     variant="outline"
                     onClick={handleSaveStory}
-                    className="border-pixar-purple/20 text-pixar-purple hover:bg-pixar-purple/5"
+                    className="border-pixar-purple/20 dark:border-pixar-purple/40 text-pixar-purple dark:text-pixar-purple/80 hover:bg-pixar-purple/5 dark:hover:bg-pixar-purple/10"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
@@ -841,20 +949,16 @@ const StoryReview = () => {
           </div>
         </div>
 
-        {/* Success Toast */}
+        {/* Success Toast - Remove motion.div */}
         {saveSuccess && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="fixed top-6 right-6 z-50 bg-emerald-50 border-l-4 border-emerald-500 text-emerald-700 p-4 rounded-lg shadow-lg"
-          >
+          <div className="fixed top-6 right-6 z-50 bg-emerald-50 dark:bg-emerald-900/50 border-l-4 border-emerald-500 text-emerald-700 dark:text-emerald-300 p-4 rounded-lg shadow-lg">
             <div className="flex items-center gap-3">
-              <Check className="h-5 w-5 text-emerald-500" />
+              <Check className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               <p className="font-medium">
                 {storyId ? "Story updated successfully!" : "Story saved successfully!"}
               </p>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {/* Loading State */}
@@ -863,10 +967,10 @@ const StoryReview = () => {
       
       {/* Preview Dialog */}
       <Dialog open={showPreview} onOpenChange={setShowPreview}>
-        <DialogContent className="max-w-3xl bg-white/95 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10">
+        <DialogContent className="max-w-3xl bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm shadow-xl rounded-2xl border-pixar-blue/10 dark:border-pixar-blue/20">
           <DialogHeader>
-            <DialogTitle className="text-2xl font-bold">Animation Preview</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="text-2xl font-bold dark:text-white">Animation Preview</DialogTitle>
+            <DialogDescription className="dark:text-gray-300">
               This is a preview of how your animation might look
             </DialogDescription>
           </DialogHeader>
@@ -874,16 +978,16 @@ const StoryReview = () => {
           <div 
             className={`${
               aspectRatio === '16:9' ? 'aspect-video' : 'aspect-[9/16] max-w-xs mx-auto'
-            } bg-gray-100 rounded-md overflow-hidden flex items-center justify-center border border-gray-200`}
+            } bg-gray-100 dark:bg-gray-700 rounded-md overflow-hidden flex items-center justify-center border border-gray-200 dark:border-gray-600`}
           >
             <div className="text-center">
-              <Film className="mx-auto h-12 w-12 text-gray-400 mb-2" />
-              <p className="text-gray-500">Preview will be available after generation</p>
+              <Film className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500 mb-2" />
+              <p className="text-gray-500 dark:text-gray-400">Preview will be available after generation</p>
             </div>
           </div>
           
           <DialogFooter className="gap-2 mt-4">
-            <Button variant="outline" onClick={() => setShowPreview(false)} className="border-gray-300">
+            <Button variant="outline" onClick={() => setShowPreview(false)} className="border-gray-300 dark:border-gray-600">
               Close
             </Button>
             <Button 
@@ -898,10 +1002,10 @@ const StoryReview = () => {
       
       {/* Save Dialog */}
       <Dialog open={saveDialogOpen} onOpenChange={setSaveDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-gray-800">
           <DialogHeader>
-            <DialogTitle>{storyId ? 'Update Story' : 'Save New Story'}</DialogTitle>
-            <DialogDescription>
+            <DialogTitle className="dark:text-white">{storyId ? 'Update Story' : 'Save New Story'}</DialogTitle>
+            <DialogDescription className="dark:text-gray-300">
               {storyId 
                 ? 'Update your story with the latest changes.' 
                 : 'Enter a name for your story to save it for later.'}
@@ -909,7 +1013,7 @@ const StoryReview = () => {
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
+              <Label htmlFor="name" className="text-right dark:text-gray-300">
                 Name
               </Label>
               <Input 
@@ -917,12 +1021,12 @@ const StoryReview = () => {
                 placeholder="My Amazing Story" 
                 value={saveName} 
                 onChange={(e) => setSaveName(e.target.value)} 
-                className="col-span-3" 
+                className="col-span-3 dark:bg-gray-700 dark:border-gray-600 dark:text-white" 
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSaveDialogOpen(false)} disabled={isSaving}>
+            <Button variant="outline" onClick={() => setSaveDialogOpen(false)} disabled={isSaving} className="dark:border-gray-600">
               Cancel
             </Button>
             <Button onClick={handleConfirmSave} disabled={isSaving || !saveName.trim()}>
