@@ -86,7 +86,7 @@ const Navbar = () => {
   // Dashboard navigation items - updated to match the routes in App.tsx
   const dashboardNavItems = [
     { name: 'Dashboard', path: '/dashboard' },
-    { name: 'Saved Stories', path: '/saved-stories' },
+    { name: 'My Stories', path: '/saved-stories' },
     { name: 'My Animations', path: '/my-animations' },
     { name: 'Build Story', path: '/build-story' },
   ];
@@ -235,7 +235,7 @@ const Navbar = () => {
                       } transition-all duration-200 group flex items-center`}
                     >
                       <User className="mr-2 h-4 w-4 group-hover:text-pixar-blue transition-colors" />
-                      <span>Saved Stories</span>
+                      <span>My Stories</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem 
                       onClick={() => navigate('/my-animations')} 

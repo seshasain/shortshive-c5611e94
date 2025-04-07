@@ -255,13 +255,6 @@ const StoryReview = () => {
       // Generate a story ID if one doesn't exist
       const generatedStoryId = storyId || uuidv4();
       
-      // Always ensure the story exists in the stories table first
-      if (!storyId) {
-        console.log('No existing story ID found, generated a new one:', generatedStoryId);
-        // Update the state with the new ID
-        setStoryId(generatedStoryId);
-      }
-      
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       
@@ -269,44 +262,20 @@ const StoryReview = () => {
         throw new Error('User not authenticated');
       }
       
-      // Create or verify the story exists in the stories table BEFORE saving to saved_stories
-      console.log('Ensuring story record exists in stories table');
-      const { data: existingStory, error: checkStoryError } = await supabase
+      // Only store in stories table
+      console.log('Creating/updating story record in stories table');
+      const { error: storyError } = await supabase
         .from('stories')
-        .select('id, user_id')
-        .eq('id', generatedStoryId)
-        .maybeSingle();
-        
-      if (checkStoryError) {
-        console.error('Error checking story record:', checkStoryError);
-        throw checkStoryError;
-      }
+        .upsert({
+          id: generatedStoryId,
+          title: storyTitle || 'Untitled Story',
+          description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
+          user_id: user.id
+        });
       
-      if (!existingStory) {
-        // Create a new story in the stories table
-        console.log('Creating new story record in stories table');
-        const { error: storyError } = await supabase
-          .from('stories')
-          .insert({
-            id: generatedStoryId, // Use the generated UUID as the story ID
-            title: storyTitle || 'Untitled Story',
-            description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
-            user_id: user.id
-          });
-        
-        if (storyError) {
-          console.error('Error creating story record:', storyError);
-          throw storyError;
-        }
-        
-        console.log('Successfully created story record with ID:', generatedStoryId);
-      } else {
-        console.log('Story record already exists with ID:', generatedStoryId);
-        // Verify ownership
-        if (existingStory.user_id !== user.id) {
-          console.error('Story exists but belongs to another user');
-          throw new Error('You do not have permission to modify this story');
-        }
+      if (storyError) {
+        console.error('Error creating/updating story record:', storyError);
+        throw storyError;
       }
       
       // Update the URL without causing a page reload if we just created a new story
@@ -318,13 +287,13 @@ const StoryReview = () => {
       
       // Prepare the animation data
       const animationData = {
-        story_id: generatedStoryId, // Use the generated or existing ID
+        story_id: generatedStoryId,
         storyContent: storyText,
         scenes: scenes.map(scene => ({
           sceneNumber: parseInt(scene.id),
           dialogueOrNarration: scene.text,
           visualDescription: scene.visualDescription || `A scene showing: ${scene.text.substring(0, 100)}...`,
-          durationEstimate: 10 // Default duration in seconds
+          durationEstimate: 10
         })),
         visualSettings: {
           colorPalette,
@@ -335,56 +304,12 @@ const StoryReview = () => {
         timestamp: new Date().toISOString()
       };
 
-      console.log('Animation data prepared:', { 
-        story_id: animationData.story_id,
-        scenesCount: animationData.scenes.length,
-        visualSettings: animationData.visualSettings
-      });
-
-      // Save the current state before generating - use the generatedStoryId
-      console.log('Saving current state before generation for story ID:', generatedStoryId);
-      try {
-        const { error: saveError } = await saveStory(
-          generatedStoryId,
-          {
-            title: storyTitle || 'Untitled Story',
-            logline: storyText,
-            scenes: animationData.scenes,
-            settings: {
-              colorPalette,
-              aspectRatio
-            }
-          }
-        );
-
-        if (saveError) {
-          console.error('Error saving story before generation:', saveError);
-          toast({
-            title: 'Error saving story',
-            description: 'Could not save story state. Please try again.',
-            variant: 'destructive',
-          });
-          return;
-        }
-        console.log('Story state saved successfully before generation');
-      } catch (saveError) {
-        console.error('Exception during story save:', saveError);
-        toast({
-          title: 'Error saving story',
-          description: 'An unexpected error occurred while saving. Please try again.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // CHANGE: Immediately navigate to the animation progress page
-      // This creates a better user experience - show the loading UI right away
+      // Navigate to the animation progress page
       navigate('/generating', { 
         state: { 
           storyId: generatedStoryId,
           title: storyTitle || 'Untitled Story',
           generationStarted: new Date().toISOString(),
-          // Initial empty state
           images: [],
           status: 'processing',
           progress: 0
@@ -397,58 +322,26 @@ const StoryReview = () => {
         variant: 'default',
       });
 
-      // Send the request to the server API after navigation
+      // Send the request to the server API
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      console.log('Sending animation generation request to:', API_URL);
-      console.log('Environment variables:', { 
-        VITE_API_URL: import.meta.env.VITE_API_URL,
-        fallbackURL: 'http://localhost:3000',
-        finalURL: `${API_URL}/api/generate-animation`
-      });
-      
-      // Check if server is reachable before proceeding
       const isServerHealthy = await checkServerHealth(API_URL);
       if (!isServerHealthy) {
         throw new Error('Server appears to be offline or unreachable. Please check your connection and try again.');
       }
       
-      try {
-        console.log('Starting fetch request to generate animation');
-        const response = await fetch(`${API_URL}/api/generate-animation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(animationData),
-        });
-        
-        console.log('Fetch request completed with status:', response.status);
-        
-        let responseData;
-        try {
-          responseData = await response.json();
-          console.log('Response data parsed successfully:', responseData);
-        } catch (jsonError) {
-          console.error('Error parsing JSON response:', jsonError);
-          throw new Error('Failed to parse server response');
-        }
-
-        if (!response.ok || !responseData.success) {
-          console.error('Server returned error:', responseData);
-          throw new Error(responseData.error || 'Failed to generate animation');
-        }
-
-        console.log('Animation generation request successful');
-      } catch (fetchError) {
-        console.error('Fetch operation failed:', fetchError);
-        console.error('Fetch error details:', {
-          name: fetchError.name,
-          message: fetchError.message,
-          stack: fetchError.stack,
-          cause: fetchError.cause
-        });
-        throw fetchError; // Re-throw to be caught by the outer catch block
+      const response = await fetch(`${API_URL}/api/generate-animation`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(animationData),
+      });
+      
+      const responseData = await response.json();
+      if (!response.ok || !responseData.success) {
+        throw new Error(responseData.error || 'Failed to generate animation');
       }
+
     } catch (error) {
       console.error('Error generating animation:', error);
       toast({
@@ -456,7 +349,6 @@ const StoryReview = () => {
         description: error.message || 'Could not generate the animation. Please try again.',
         variant: 'destructive',
       });
-      // Navigate back to story review on error
       if (storyId) {
         navigate(`/review-story/${storyId}`);
       } else {
@@ -480,7 +372,6 @@ const StoryReview = () => {
   };
   
   const handleConfirmSave = async () => {
-    // Set the saving state
     setIsSaving(true);
     
     try {
@@ -492,9 +383,8 @@ const StoryReview = () => {
       
       let storyIdToUse = storyId;
       
-      // Only create a new story if we don't have an existing storyId
+      // Create or update story in stories table
       if (!storyIdToUse) {
-        // Create a new story
         const { data: newStory, error: storyError } = await supabase
           .from('stories')
           .insert({
@@ -508,7 +398,6 @@ const StoryReview = () => {
         if (storyError) throw storyError;
         storyIdToUse = newStory.id;
       } else {
-        // Update the existing story
         const { error: updateError } = await supabase
           .from('stories')
           .update({
@@ -520,53 +409,47 @@ const StoryReview = () => {
         if (updateError) throw updateError;
       }
       
-      // Format the data according to the required schema
+      // Format scenes for saved_stories table
       const formattedScenes = scenes.map(scene => ({
         sceneNumber: parseInt(scene.id),
-        durationEstimate: 10, // Default duration
+        durationEstimate: 10,
         visualDescription: scene.visualDescription || 'Visual description placeholder',
         dialogueOrNarration: scene.text
       }));
 
-      // Prepare the generation state to save in specified format
-      const generationState = {
-        title: storyTitle || saveName,
-        logline: storyText,
-        settings: {
-          emotion: "Neutral", // Default values if not specified
-          language: "English",
-          voiceStyle: "Conversational",
-          duration: formattedScenes.length * 10, // Rough estimate based on scenes
-          addHook: true
-        },
-        characters: [
-          // We could extract characters from the story, but for now use a placeholder
-          {
-            name: "Main Character",
-            description: "Character from the story"
-          }
-        ],
-        scenes: formattedScenes
-      };
-      
-      // Save to the saved_stories table
+      // Save to saved_stories table
       const { error: savedStoryError } = await saveStory(
         storyIdToUse,
-        generationState,
+        {
+          title: storyTitle || saveName,
+          logline: storyText,
+          settings: {
+            emotion: "Neutral",
+            language: "English",
+            voiceStyle: "Conversational",
+            duration: formattedScenes.length * 10,
+            addHook: true
+          },
+          characters: [
+            {
+              name: "Main Character",
+              description: "Character from the story"
+            }
+          ],
+          scenes: formattedScenes
+        },
         `Updated on ${new Date().toLocaleString()}`
       );
       
       if (savedStoryError) throw savedStoryError;
       
-      // Close the dialog and show success message
+      // Close dialog and show success message
       setSaveDialogOpen(false);
       setSaveSuccess(true);
       
-      // Don't navigate away, just update the local state if needed
+      // Update local state and URL if needed
       if (!storyId) {
-        // Update the storyId state to track the new story
         setStoryId(storyIdToUse);
-        // Update the URL without full page navigation
         navigate(`/review-story/${storyIdToUse}`, { replace: true });
       }
       
@@ -578,7 +461,6 @@ const StoryReview = () => {
         variant: "default",
       });
       
-      // Hide success message after 3 seconds
       setTimeout(() => {
         setSaveSuccess(false);
       }, 3000);

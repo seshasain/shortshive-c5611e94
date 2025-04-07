@@ -40,7 +40,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
   const navItems = [
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
     { label: 'My Animations', icon: Video, href: '/my-animations' },
-    { label: 'Saved Stories', icon: FileText, href: '/saved-stories' },
+    { label: 'My Stories', icon: FileText, href: '/saved-stories' },
   ];
   
   return (

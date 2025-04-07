@@ -179,16 +179,16 @@ const Stories = () => {
                 <Book className="h-5 w-5 text-pixar-purple" />
                 <span className={`text-sm font-medium ${
                   theme === 'dark' ? 'text-gray-300' : 'text-gray-700'
-                }`}>Your Saved Stories</span>
+                }`}>My Stories</span>
               </div>
             </motion.div>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-3 pixar-text-gradient tracking-tight">
-              Saved Stories
+              My Stories
             </h1>
             <p className={`text-lg ${
               theme === 'dark' ? 'text-gray-300' : 'text-muted-foreground'
             } max-w-xl`}>
-              View and manage your saved story drafts and completed stories
+              View and manage all your stories, drafts, and completed works
             </p>
           </div>
           <Button 
