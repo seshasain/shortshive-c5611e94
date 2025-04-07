@@ -107,8 +107,24 @@ async function generateStoryImages(storyId, storyData, adminRules = {}) {
     // Extract key story elements
     const title = storyData.title || "Untitled Story";
     const logline = storyData.logline || "";
-    const characters = storyData.characters || [];
+    let characters = [];
+
+    // Properly extract characters from whatever format they might be in
+    if (Array.isArray(storyData.characters) && storyData.characters.length > 0) {
+      characters = storyData.characters;
+    } else if (storyData.characters && typeof storyData.characters === 'object') {
+      // Try to extract from non-array format
+      characters = Object.values(storyData.characters).filter(c => c && (c.name || c.description));
+    } else if (storyData.visualSettings && Array.isArray(storyData.visualSettings.characters)) {
+      // Check if characters are in visualSettings
+      characters = storyData.visualSettings.characters;
+    }
+
     const emotion = storyData.settings?.emotion || "Neutral";
+
+    // Log character data for debugging
+    console.log(`Processing ${characters.length} characters:`, 
+      characters.map(c => c.name || 'unnamed').join(', '));
 
     // Format the story data with clear sections and line breaks
     let promptForPython = `STORY: "${title}"\n\n`;
@@ -125,28 +141,39 @@ async function generateStoryImages(storyId, storyData, adminRules = {}) {
       promptForPython += `\n`;
     }
 
+    // Enhanced character section
     if (characters && characters.length > 0) {
       promptForPython += `CHARACTERS:\n`;
       promptForPython += `The following characters must maintain 100% consistent appearance across all scenes:\n\n`;
       
       for (const character of characters) {
-        promptForPython += `CHARACTER: ${character.name}\n`;
-        promptForPython += `Description: ${character.description}\n`;
+        // Handle potentially malformed character data
+        const charName = character.name || 'Character';
+        const charDesc = character.description || '';
+        
+        promptForPython += `CHARACTER: ${charName}\n`;
+        promptForPython += `Description: ${charDesc}\n`;
         
         // If the description doesn't specifically mention physical traits, add default guidance
-        if (!character.description.toLowerCase().includes('wear') && 
-            !character.description.toLowerCase().includes('cloth') &&
-            !character.description.toLowerCase().includes('outfit')) {
+        if (!charDesc.toLowerCase().includes('wear') && 
+            !charDesc.toLowerCase().includes('cloth') &&
+            !charDesc.toLowerCase().includes('outfit')) {
           promptForPython += `Ensure consistent clothing/outfit across all scenes\n`;
         }
         
-        if (!character.description.toLowerCase().includes('hair') && 
-            !character.description.toLowerCase().includes('hairstyle')) {
+        if (!charDesc.toLowerCase().includes('hair') && 
+            !charDesc.toLowerCase().includes('hairstyle')) {
           promptForPython += `Maintain consistent hairstyle across all scenes\n`;
         }
         
         promptForPython += `Maintain exact same facial features, body proportions, and characteristic details in every scene\n\n`;
       }
+    } else {
+      // If we still have no characters after checking multiple paths, add a default character
+      promptForPython += `CHARACTERS: No explicit characters defined in the story. For any characters that appear in the scenes:\n`;
+      promptForPython += `- Maintain consistent appearance across all scenes\n`;
+      promptForPython += `- Keep the same clothing, hairstyle, and physical attributes in every scene\n`;
+      promptForPython += `- Ensure facial features, body proportions, and colors remain identical\n\n`;
     }
 
     promptForPython += `SCENES:\n`;
@@ -282,8 +309,8 @@ async function generateStoryImages(storyId, storyData, adminRules = {}) {
     const results = [];
     const failedScenes = [];
     
-    for (const scene of scenes) {
-      const sceneNumber = scene.sceneNumber || parseInt(scene.id) || scenes.indexOf(scene) + 1;
+    for (const scene of storyData.scenes) {
+      const sceneNumber = scene.sceneNumber || parseInt(scene.id) || storyData.scenes.indexOf(scene) + 1;
       failedScenes.push(sceneNumber);
       
       // Create a placeholder image

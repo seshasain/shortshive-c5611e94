@@ -332,19 +332,52 @@ const StoryReview = () => {
         console.log('Updated URL to:', newUrl);
       }
       
+      // Format the scenes for the animationData
+      const formattedScenes = scenes.map(scene => ({
+        sceneNumber: parseInt(scene.id),
+        dialogueOrNarration: scene.text,
+        visualDescription: scene.visualDescription || `A scene showing: ${scene.text.substring(0, 100)}...`,
+        durationEstimate: 10 // Default duration in seconds
+      }));
+      
+      // Get the refined story data if available from location state
+      const state = location.state as { storyData?: StoryData; generatedStory?: any } | null;
+      const generatedStory = state?.generatedStory;
+      
+      // Extract characters from generatedStory if available, otherwise create default
+      let characters = [];
+      if (generatedStory && generatedStory.characters && generatedStory.characters.length > 0) {
+        characters = generatedStory.characters;
+        console.log('Using characters from generated story:', characters);
+      } else {
+        // Create a default character
+        characters = [
+          {
+            name: "Main Character",
+            description: "A character from the story. No specific details were provided, but for visual consistency, please maintain the same appearance for this character across all scenes."
+          }
+        ];
+        console.log('Using default character definition since none was provided');
+      }
+      
       // Prepare the animation data
       const animationData = {
         story_id: generatedStoryId, // Use the generated or existing ID
-        storyContent: storyText,
-        scenes: scenes.map(scene => ({
-          sceneNumber: parseInt(scene.id),
-          dialogueOrNarration: scene.text,
-          visualDescription: scene.visualDescription || `A scene showing: ${scene.text.substring(0, 100)}...`,
-          durationEstimate: 10 // Default duration in seconds
-        })),
+        title: storyTitle || 'Untitled Story',
+        logline: storyText,
+        characters: characters,
+        scenes: formattedScenes,
+        settings: {
+          emotion: generatedStory?.settings?.emotion || "Neutral",
+          language: generatedStory?.settings?.language || "English",
+          voiceStyle: generatedStory?.settings?.voiceStyle || "Conversational",
+          duration: formattedScenes.length * 10, // Rough estimate based on scenes
+          addHook: true
+        },
         visualSettings: {
           colorPalette,
-          aspectRatio
+          aspectRatio,
+          title: storyTitle || 'Untitled Story' // Add title to visualSettings for backward compatibility
         },
         originalStoryType: storyType,
         originalPrompt: storyType === 'ai-prompt' ? promptText : null,
@@ -353,6 +386,8 @@ const StoryReview = () => {
 
       console.log('Animation data prepared:', { 
         story_id: animationData.story_id,
+        title: animationData.title,
+        characters_count: animationData.characters?.length || 0,
         scenesCount: animationData.scenes.length,
         visualSettings: animationData.visualSettings
       });
@@ -365,10 +400,14 @@ const StoryReview = () => {
           {
             title: storyTitle || 'Untitled Story',
             logline: storyText,
-            scenes: animationData.scenes,
+            scenes: formattedScenes,
+            characters: characters,
             settings: {
-              colorPalette,
-              aspectRatio
+              emotion: generatedStory?.settings?.emotion || "Neutral",
+              language: generatedStory?.settings?.language || "English",
+              voiceStyle: generatedStory?.settings?.voiceStyle || "Conversational",
+              duration: formattedScenes.length * 10,
+              addHook: true
             }
           }
         );
@@ -773,7 +812,6 @@ const StoryReview = () => {
                         index={index}
                         onEdit={handleEditScene}
                         delay={index * 0.1}
-                        theme={theme}
                       />
                     ))}
                   </div>

@@ -1,0 +1,67 @@
+PROMPT RECEIVED BY PYTHON SCRIPT:
+
+STORY: "Banana Break!"
+
+LOGLINE: Two mischievous minions accidentally create chaos during their banana break.
+
+SETTINGS:
+- emotion: Humorous
+- language: English
+- voiceStyle: Friendly
+- duration: 60
+- addHook: true
+
+CHARACTERS:
+The following characters must maintain 100% consistent appearance across all scenes:
+
+CHARACTER: Bob
+Description: A small, plump minion with two eyes, wearing blue overalls. Bob is eternally optimistic and slightly clumsy, with a wide, innocent smile and a single strand of hair sticking up. He's always excited and easily distracted by fun things, especially bananas.
+Maintain exact same facial features, body proportions, and characteristic details in every scene
+
+CHARACTER: Kevin
+Description: A tall, slender minion with two eyes, also in blue overalls. Kevin is slightly more responsible than Bob, but still prone to silliness. He has a tuft of hair on his head and a mischievous grin, often trying to be the leader but easily swayed by Bob's enthusiasm.
+Ensure consistent clothing/outfit across all scenes
+Maintain exact same facial features, body proportions, and characteristic details in every scene
+
+SCENES:
+SCENE 1:
+Duration: 10 seconds
+Visual Description: CLOSE UP on a ticking clock hitting noon. Suddenly, a whistle blows loudly. Bob and Kevin, working diligently in a lab filled with gadgets, INSTANTLY drop their tools and look at each other with wide, excited eyes.
+Dialogue/Narration: When the clock strikes noon, you know what time it is... Banana Break!
+
+SCENE 2:
+Duration: 10 seconds
+Visual Description: Bob and Kevin DASH to a break room. Kevin dramatically slides on the floor, nearly tripping over a stack of boxes labeled 'DO NOT EAT'. Bob giggles and jumps over them. The break room is brightly lit and stocked with bananas.
+Dialogue/Narration: Time to refuel with our favorite yellow treat!
+
+SCENE 3:
+Duration: 10 seconds
+Visual Description: Bob starts peeling a banana with gusto, while Kevin attempts a fancy peel, throwing the peel in the air and trying to catch it in a bin. He misses hilariously, the peel landing on Bob's head. Bob looks up, confused, with the peel on his single strand of hair.
+Dialogue/Narration: Peeling a banana? Easy peasy... banana squeezy!
+
+SCENE 4:
+Duration: 10 seconds
+Visual Description: Kevin laughs as Bob removes the peel and playfully throws a piece back at Kevin, who ducks dramatically. A mini banana peel fight ensues, with peels flying everywhere in slow motion, sticking to the walls and ceiling.
+Dialogue/Narration: Oops! Maybe a little too much fun?
+
+SCENE 5:
+Duration: 10 seconds
+Visual Description: Suddenly, the door swings open and another, much larger minion, DAVE, enters, covered in banana peels from head to toe, looking bewildered and slipping on the peels covering the floor. Bob and Kevin freeze, bananas halfway to their mouths, wide-eyed.
+Dialogue/Narration: Uh oh... looks like we made a bit of a mess.
+
+SCENE 6:
+Duration: 10 seconds
+Visual Description: CLOSE UP on Bob and Kevin exchanging sheepish glances, then bursting into laughter. They offer Dave a fresh banana, which he hesitantly takes, a small smile forming on his peel-covered face. FADE OUT as banana peels continue to rain down comedically.
+Dialogue/Narration: Banana break might be a little messy, but it's always better together!
+
+ADMIN RULES:
+- Generate EXACTLY one high-quality image for each scene in Pixar-style 3D animation style
+- Create ultra-high-quality cinematic visuals for every scene
+- Ensure you generate meaningful visuals that clearly depict what's happening in the story
+- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors
+- Focus on the primary action described in each scene's visual description
+- Create images that work together as a cohesive visual narrative
+- Ensure perfect character consistency - this is the MOST IMPORTANT requirement
+
+
+---END OF PROMPT---

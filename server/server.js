@@ -59,12 +59,8 @@ app.get('/api/health', (req, res) => {
 // Animation generation endpoint
 app.post('/api/generate-animation', async (req, res) => {
     console.log('Animation generation requested');
-    console.log('Request body structure:', JSON.stringify({
-        story_id: req.body.story_id,
-        scenes_count: req.body.scenes?.length
-    }));
     
-    // Validate request body
+    // Validate basic request structure
     const { story_id } = req.body;
     
     if (!story_id) {
@@ -75,8 +71,37 @@ app.post('/api/generate-animation', async (req, res) => {
         });
     }
     
-    // Construct the complete story data object
-    const storyData = { ...req.body };
+    // Create a properly structured storyData object
+    const storyData = {
+        story_id: req.body.story_id,
+        title: req.body.title || "Untitled Story",
+        logline: req.body.logline || "",
+        scenes: req.body.scenes || [],
+        characters: req.body.characters || [],
+        settings: req.body.settings || {},
+        visualSettings: req.body.visualSettings || {}
+    };
+    
+    // Verify we have all required data and log it for debugging
+    console.log('Processed request data:', JSON.stringify({
+        story_id: storyData.story_id,
+        title: storyData.title,
+        logline_length: storyData.logline?.length || 0,
+        scenes_count: storyData.scenes?.length || 0,
+        characters_count: storyData.characters?.length || 0,
+        settings: Object.keys(storyData.settings || {}),
+        visualSettings: Object.keys(storyData.visualSettings || {})
+    }));
+    
+    // Log character data specifically for debugging
+    if (storyData.characters && storyData.characters.length > 0) {
+        console.log('Character data:', storyData.characters.map(char => ({
+            name: char.name,
+            description_length: char.description?.length || 0
+        })));
+    } else {
+        console.log('No characters found in request data');
+    }
     
     // Validate required story elements
     if (!storyData.scenes || !Array.isArray(storyData.scenes) || storyData.scenes.length === 0) {
@@ -89,6 +114,7 @@ app.post('/api/generate-animation', async (req, res) => {
     
     try {
         console.log(`Generating animation for story ${story_id} with ${storyData.scenes.length} scenes`);
+        
         // Track this story in our processing list
         currentlyProcessingStories[story_id] = {
             startTime: new Date(),
