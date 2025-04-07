@@ -228,7 +228,12 @@ async function generateStoryImages(storyId, scenes, visualSettings) {
         promptForPython,
         outputDir,
         storyId
-      ]);
+      ], {
+        env: {
+          ...process.env,
+          GEMINI_API_KEY: apiKey
+        }
+      });
       
       // Handle stdout
       pythonProcess.stdout.on('data', (data) => {

@@ -19,8 +19,13 @@ def generate(prompt, output_dir, story_id):
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
             
+        # Get API key from environment variable
+        api_key = os.getenv('GEMINI_API_KEY')
+        if not api_key:
+            raise ValueError("GEMINI_API_KEY environment variable is not set")
+            
         client = genai.Client(
-            api_key="AIzaSyB7Kv46ezacnh1jEWSE48ENfLIPMErDkgo",
+            api_key=api_key,
         )
 
         model = "gemini-2.0-flash-exp-image-generation"
