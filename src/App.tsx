@@ -18,6 +18,7 @@ import StoryReview from "./pages/StoryReview";
 import AnimationProgress from "./pages/AnimationProgress";
 import Settings from "./pages/Settings";
 import SavedStories from "./pages/SavedStories";
+import History from "./pages/History";
 import MyAnimations from "./pages/MyAnimations";
 import AnimationViewer from "./pages/AnimationViewer";
 
@@ -44,6 +45,7 @@ const App = () => (
             {/* Protected Routes */}
             <Route path="/dashboard" element={<AuthGuard requireAuth={true}><Dashboard /></AuthGuard>} />
             <Route path="/saved-stories" element={<AuthGuard requireAuth={true}><SavedStories /></AuthGuard>} />
+            <Route path="/history" element={<AuthGuard requireAuth={true}><History /></AuthGuard>} />
             <Route path="/my-animations" element={<AuthGuard requireAuth={true}><MyAnimations /></AuthGuard>} />
             <Route path="/build-story" element={<AuthGuard requireAuth={true}><StoryBuilder /></AuthGuard>} />
             <Route path="/review-story" element={<AuthGuard requireAuth={true}><StoryReview /></AuthGuard>} />

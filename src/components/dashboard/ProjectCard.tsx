@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -53,7 +52,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="mb-5"
     >
-      <Card className="overflow-hidden hover:shadow-md transition-all duration-300">
+      <Card className="overflow-hidden hover:shadow-md transition-all duration-300 dark:bg-gray-800 dark:border-gray-700">
         <div className="relative">
           <img 
             src={project.thumbnail} 
@@ -64,14 +63,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
             <div className="absolute inset-0 bg-black/60 opacity-0 hover:opacity-100 transition-opacity flex items-center justify-center">
               <Button 
                 size="icon" 
-                className="bg-white text-pixar-blue hover:bg-white/90"
+                className="bg-white text-pixar-blue hover:bg-white/90 dark:bg-gray-800 dark:text-pixar-blue/80 dark:hover:bg-gray-700"
               >
                 <Play className="h-6 w-6" />
               </Button>
             </div>
           )}
           <Badge 
-            className={`absolute top-3 right-3 ${getStatusColor(project.status)}`}
+            className={`absolute top-3 right-3 ${getStatusColor(project.status)} dark:bg-opacity-20`}
           >
             {project.status.charAt(0).toUpperCase() + project.status.slice(1)}
           </Badge>
@@ -80,24 +79,24 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
         <CardContent className="p-4">
           <div className="flex justify-between items-start">
             <div>
-              <h3 className="text-lg font-bold mb-1">{project.title}</h3>
-              <p className="text-sm text-muted-foreground">
+              <h3 className="text-lg font-bold mb-1 dark:text-white">{project.title}</h3>
+              <p className="text-sm text-muted-foreground dark:text-gray-400">
                 Last edited: {new Date(project.date).toLocaleDateString()}
               </p>
             </div>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon">
+                <Button variant="ghost" size="icon" className="dark:text-gray-400 dark:hover:text-pixar-blue dark:hover:bg-gray-700">
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>
+              <DropdownMenuContent align="end" className="dark:bg-gray-800 dark:border-gray-700">
+                <DropdownMenuItem className="dark:text-gray-300 dark:hover:text-pixar-blue dark:hover:bg-gray-700">
                   <Edit className="mr-2 h-4 w-4" />
                   Edit
                 </DropdownMenuItem>
-                <DropdownMenuItem>Duplicate</DropdownMenuItem>
-                <DropdownMenuItem className="text-red-500">Delete</DropdownMenuItem>
+                <DropdownMenuItem className="dark:text-gray-300 dark:hover:text-pixar-blue dark:hover:bg-gray-700">Duplicate</DropdownMenuItem>
+                <DropdownMenuItem className="text-red-500 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-gray-700">Delete</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -107,14 +106,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, delay = 0 }) => {
           <Button 
             variant="ghost" 
             size="sm" 
-            className="text-pixar-blue hover:text-pixar-darkblue hover:bg-pixar-blue/5"
+            className="text-pixar-blue hover:text-pixar-darkblue hover:bg-pixar-blue/5 dark:text-pixar-blue/80 dark:hover:text-pixar-blue dark:hover:bg-gray-700"
           >
             Preview
           </Button>
           <Link to={project.status === 'draft' ? `/build-story?id=${project.id}` : `/review-story?id=${project.id}`}>
             <Button 
               size="sm" 
-              className="bg-pixar-blue text-white hover:bg-pixar-darkblue"
+              className="bg-pixar-blue text-white hover:bg-pixar-darkblue dark:bg-pixar-blue/80 dark:hover:bg-pixar-blue"
             >
               {project.status === 'draft' ? 'Continue Editing' : 'View Details'}
             </Button>

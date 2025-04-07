@@ -250,14 +250,15 @@ async function generateStoryImages(storyId, scenes, visualSettings) {
         }
         
         // Try to find the JSON result in stdout
-        const markerPrefix = "JSON_RESULT_MARKER:";
+        const markerPrefix = "JSON_RESULT_MARKER";
         const lines = stdout.trim().split('\n');
         
         // Look for the marker to find the JSON result line
         let jsonLine = null;
-        for (const line of lines) {
-          if (line.startsWith(markerPrefix)) {
-            jsonLine = line.substring(markerPrefix.length).trim();
+        for (let i = 0; i < lines.length; i++) {
+          const line = lines[i];
+          if (line === markerPrefix && i + 1 < lines.length) {
+            jsonLine = lines[i + 1];
             break;
           }
         }

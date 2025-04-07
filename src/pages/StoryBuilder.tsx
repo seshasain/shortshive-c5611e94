@@ -410,17 +410,17 @@ const StoryBuilder = React.memo(() => {
                   />
                 </div>
 
-                {/* Language Selection */}
+                {/* Language */}
                 <div>
-                  <Label htmlFor="language" className="flex items-center font-medium mb-2">
-                    <Languages className="mr-2 h-4 w-4 text-gray-500" />
+                  <Label htmlFor="language" className={`flex items-center font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : ''}`}>
+                    <Languages className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                     Language
                   </Label>
                   <Select value={language} onValueChange={setLanguage}>
-                    <SelectTrigger className="w-full bg-white border-pixar-blue/20">
+                    <SelectTrigger className={`w-full ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-pixar-blue/20'}`}>
                       <SelectValue placeholder="Select language" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={theme === 'dark' ? 'bg-gray-800 border-gray-700' : ''}>
                       <SelectItem value="English">English</SelectItem>
                       <SelectItem value="Spanish">Spanish</SelectItem>
                       <SelectItem value="French">French</SelectItem>
@@ -433,15 +433,15 @@ const StoryBuilder = React.memo(() => {
 
                 {/* Voice Style */}
                 <div>
-                  <Label htmlFor="voice" className="flex items-center font-medium mb-2">
-                    <Mic className="mr-2 h-4 w-4 text-gray-500" />
+                  <Label htmlFor="voice" className={`flex items-center font-medium mb-2 ${theme === 'dark' ? 'text-gray-300' : ''}`}>
+                    <Mic className="mr-2 h-4 w-4 text-gray-500 dark:text-gray-400" />
                     Voice Style
                   </Label>
                   <Select value={voiceStyle} onValueChange={setVoiceStyle}>
-                    <SelectTrigger className="w-full bg-white border-pixar-blue/20">
+                    <SelectTrigger className={`w-full ${theme === 'dark' ? 'bg-gray-700 border-gray-600 text-gray-200' : 'bg-white border-pixar-blue/20'}`}>
                       <SelectValue placeholder="Select voice style" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className={theme === 'dark' ? 'bg-gray-800 border-gray-700' : ''}>
                       <SelectItem value="Friendly">Friendly</SelectItem>
                       <SelectItem value="Professional">Professional</SelectItem>
                       <SelectItem value="Energetic">Energetic</SelectItem>
@@ -452,27 +452,27 @@ const StoryBuilder = React.memo(() => {
                 </div>
 
                 {/* Duration */}
-                <div className="p-4 rounded-xl bg-gradient-to-r from-pixar-orange/5 to-transparent border border-pixar-orange/10">
-                  <Label className="flex items-center font-medium mb-3">
+                <div className={`p-4 rounded-xl ${theme === 'dark' ? 'bg-gradient-to-r from-pixar-orange/10 to-transparent border border-pixar-orange/20' : 'bg-gradient-to-r from-pixar-orange/5 to-transparent border border-pixar-orange/10'}`}>
+                  <Label className={`flex items-center font-medium mb-3 ${theme === 'dark' ? 'text-gray-300' : ''}`}>
                     <Clock className="mr-2 h-4 w-4 text-pixar-orange" />
                     Duration
                   </Label>
                   <RadioGroup value={duration} onValueChange={setDuration} className="grid grid-cols-3 gap-2">
-                    <div className="flex items-center justify-center p-2 rounded-lg bg-white border border-gray-200">
+                    <div className={`flex items-center justify-center p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border border-gray-200'}`}>
                       <RadioGroupItem value="30" id="duration-30" className="peer sr-only" />
-                      <Label htmlFor="duration-30" className="text-sm font-medium cursor-pointer peer-data-[state=checked]:text-pixar-orange">
+                      <Label htmlFor="duration-30" className={`text-sm font-medium cursor-pointer peer-data-[state=checked]:text-pixar-orange ${theme === 'dark' ? 'text-gray-300' : ''}`}>
                         30s
                       </Label>
                     </div>
-                    <div className="flex items-center justify-center p-2 rounded-lg bg-white border border-gray-200">
+                    <div className={`flex items-center justify-center p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border border-gray-200'}`}>
                       <RadioGroupItem value="60" id="duration-60" className="peer sr-only" />
-                      <Label htmlFor="duration-60" className="text-sm font-medium cursor-pointer peer-data-[state=checked]:text-pixar-orange">
+                      <Label htmlFor="duration-60" className={`text-sm font-medium cursor-pointer peer-data-[state=checked]:text-pixar-orange ${theme === 'dark' ? 'text-gray-300' : ''}`}>
                         1m
                       </Label>
                     </div>
-                    <div className="flex items-center justify-center p-2 rounded-lg bg-white border border-gray-200">
+                    <div className={`flex items-center justify-center p-2 rounded-lg ${theme === 'dark' ? 'bg-gray-700 border-gray-600' : 'bg-white border border-gray-200'}`}>
                       <RadioGroupItem value="120" id="duration-120" className="peer sr-only" />
-                      <Label htmlFor="duration-120" className="text-sm font-medium cursor-pointer peer-data-[state=checked]:text-pixar-orange">
+                      <Label htmlFor="duration-120" className={`text-sm font-medium cursor-pointer peer-data-[state=checked]:text-pixar-orange ${theme === 'dark' ? 'text-gray-300' : ''}`}>
                         2m
                       </Label>
                     </div>

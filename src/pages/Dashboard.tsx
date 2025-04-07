@@ -120,8 +120,8 @@ const Dashboard = () => {
         
         <div className="mb-10">
           <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl md:text-2xl font-bold pixar-text-gradient">Recent Projects</h2>
-            <Link to="/my-animations" className="text-pixar-blue hover:text-pixar-darkblue flex items-center text-sm font-medium">
+            <h2 className="text-xl md:text-2xl font-bold pixar-text-gradient dark:text-white">Recent Projects</h2>
+            <Link to="/my-animations" className="text-pixar-blue hover:text-pixar-darkblue dark:text-pixar-blue/80 dark:hover:text-pixar-blue flex items-center text-sm font-medium">
               View All <ArrowRight className="ml-1 h-4 w-4" />
             </Link>
           </div>
@@ -134,13 +134,13 @@ const Dashboard = () => {
               whileHover={{ y: -5, transition: { duration: 0.2 } }}
             >
               <Link to="/build-story" className="block h-full">
-                <Card className="border border-dashed border-gray-300 bg-gray-50 hover:bg-gray-100 h-full transition-all duration-300 flex flex-col justify-center items-center py-10">
+                <Card className="border border-dashed border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 h-full transition-all duration-300 flex flex-col justify-center items-center py-10">
                   <div className="text-center">
-                    <div className="mx-auto rounded-full bg-pixar-blue/10 p-4 mb-4">
-                      <Plus className="h-8 w-8 text-pixar-blue" />
+                    <div className="mx-auto rounded-full bg-pixar-blue/10 dark:bg-pixar-blue/20 p-4 mb-4">
+                      <Plus className="h-8 w-8 text-pixar-blue dark:text-pixar-blue/80" />
                     </div>
-                    <h3 className="text-xl font-medium mb-2">Start New Project</h3>
-                    <p className="text-muted-foreground mb-4">Create a stunning Pixar-style animation</p>
+                    <h3 className="text-xl font-medium mb-2 dark:text-white">Start New Project</h3>
+                    <p className="text-muted-foreground dark:text-gray-400 mb-4">Create a stunning Pixar-style animation</p>
                   </div>
                 </Card>
               </Link>

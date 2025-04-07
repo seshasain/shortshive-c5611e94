@@ -4,7 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
   Home, Video, FileText, Settings, LogOut, HelpCircle, 
-  Menu, X, ChevronRight, Bell, Film, User, CreditCard, PenSquare, Moon, Sun
+  Menu, X, ChevronRight, Bell, Film, User, CreditCard, PenSquare, Moon, Sun, Clock
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,6 +41,7 @@ const DashboardLayout = ({ children }: DashboardLayoutProps) => {
     { label: 'Dashboard', icon: Home, href: '/dashboard' },
     { label: 'My Animations', icon: Video, href: '/my-animations' },
     { label: 'Saved Stories', icon: FileText, href: '/saved-stories' },
+    { label: 'History', icon: Clock, href: '/history' },
   ];
   
   return (
