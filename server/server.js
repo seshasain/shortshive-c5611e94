@@ -374,31 +374,67 @@ Return ONLY the JSON without any additional text or explanation.`;
 
         const result = await response.json();
         const storyText = result.choices[0].message.content;
-        console.log("Raw storyText", storyText);
+        console.log("Raw storyText received:", storyText.substring(0, 200) + "...");
         
         // Extract only the JSON part from the response
         let jsonContent = storyText;
         
-        // Check if the response is wrapped in markdown code blocks (```json ... ```)
-        const jsonRegex = /```(?:json)?\s*(\{[\s\S]*?\})\s*```/;
-        const match = storyText.match(jsonRegex);
+        // Improved JSON extraction logic
+        // First try to find content between ```json and ``` markdown tags
+        const markdownMatch = storyText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
         
-        if (match && match[1]) {
-            jsonContent = match[1];
+        if (markdownMatch && markdownMatch[1]) {
+            // Found content inside markdown code blocks
+            jsonContent = markdownMatch[1].trim();
+            console.log("Extracted JSON from markdown code block");
         } else {
-            // If no markdown blocks, try to find the first { and last }
-            const firstBrace = storyText.indexOf('{');
-            const lastBrace = storyText.lastIndexOf('}');
-            
-            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
-                jsonContent = storyText.substring(firstBrace, lastBrace + 1);
+            // If no markdown blocks found, try to find the outermost JSON object
+            try {
+                // Find the first { and the matching last }
+                const firstBrace = storyText.indexOf('{');
+                if (firstBrace !== -1) {
+                    let braceCount = 0;
+                    let lastMatchingBrace = -1;
+                    
+                    // Parse through the content to find matching closing brace
+                    for (let i = firstBrace; i < storyText.length; i++) {
+                        if (storyText[i] === '{') braceCount++;
+                        else if (storyText[i] === '}') {
+                            braceCount--;
+                            if (braceCount === 0) {
+                                lastMatchingBrace = i;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    if (lastMatchingBrace !== -1) {
+                        jsonContent = storyText.substring(firstBrace, lastMatchingBrace + 1);
+                        console.log("Extracted JSON using brace matching logic");
+                    }
+                }
+            } catch (extractError) {
+                console.error("Error in JSON extraction logic:", extractError);
+                // Fall back to the entire content if extraction fails
+                jsonContent = storyText;
             }
         }
         
-        console.log("Extracted JSON content", jsonContent);
+        console.log("Extracted JSON content length:", jsonContent.length);
         
         try {
+            // Additional validation to ensure we're parsing JSON
+            if (!jsonContent.trim().startsWith('{')) {
+                throw new Error("Extracted content is not valid JSON (doesn't start with {)");
+            }
+            
             const parsedResponse = JSON.parse(jsonContent);
+            
+            // Validate the parsed response has the expected structure
+            if (!parsedResponse.title || !parsedResponse.scenes) {
+                console.warn("Parsed JSON is missing expected fields:", Object.keys(parsedResponse));
+            }
+            
             res.json({ success: true, data: parsedResponse });
         } catch (jsonError) {
             console.error('JSON parsing error:', jsonError);

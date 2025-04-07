@@ -166,9 +166,72 @@ const StoryReview = () => {
               
               // Replace current state with updated one that includes generated story
               navigate('', { state: newState, replace: true });
+            } else if (!response.success && response.rawContent) {
+              // Handle the raw content case - try to parse it ourselves
+              console.log('Server failed to parse story content, attempting client-side parsing');
+              try {
+                // Try to manually construct a valid response object
+                // This code will process the raw JSON string that was returned from the API
+                const processedContent = processRawStoryContent(response.rawContent);
+                
+                if (processedContent) {
+                  setStoryTitle(processedContent.title || 'Story from AI');
+                  setStoryText(processedContent.logline || storyContent);
+                  
+                  if (processedContent.scenes && processedContent.scenes.length > 0) {
+                    setScenes(processedContent.scenes.map((scene, index) => ({
+                      id: String(index + 1),
+                      text: scene.dialogueOrNarration || scene.text || `Scene ${index + 1}`,
+                      image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
+                      visualDescription: scene.visualDescription || `Visual for scene ${index + 1}`
+                    })));
+                  } else {
+                    // Create default scenes if none were found
+                    const defaultScenes = createDefaultScenes(storyContent);
+                    setScenes(defaultScenes);
+                  }
+                  
+                  toast({
+                    title: 'Story processed with fallback method',
+                    description: 'We had some trouble processing the AI response, but we\'ve created a story for you to edit.',
+                    variant: 'default',
+                  });
+                } else {
+                  throw new Error('Failed to process content');
+                }
+              } catch (parseError) {
+                console.error('Failed to process raw content:', parseError);
+                // Set some default state so the user can still proceed
+                setStoryTitle('My Story');
+                setStoryText(storyContent);
+                
+                // Create simple scene breakdown
+                const defaultScenes = createDefaultScenes(storyContent);
+                setScenes(defaultScenes);
+                
+                toast({
+                  title: 'Story generation partial success',
+                  description: 'We couldn\'t fully process the AI response. Please edit the content manually.',
+                  variant: 'destructive',
+                });
+              }
             }
           } catch (error) {
             console.error('Error refining story:', error);
+            // Provide user feedback
+            toast({
+              title: 'Error refining story',
+              description: 'There was a problem generating your story. Please try again or edit manually.',
+              variant: 'destructive',
+            });
+            
+            // Set some default state so the user can still proceed
+            setStoryTitle('My Story');
+            setStoryText(storyContent);
+            
+            // Create simple scene breakdown
+            const defaultScenes = createDefaultScenes(storyContent);
+            setScenes(defaultScenes);
           } finally {
             setIsLoading(false);
           }
@@ -1083,6 +1146,125 @@ const StoryReview = () => {
       </Dialog>
     </DashboardLayout>
   );
+};
+
+// Helper function to process raw story content
+const processRawStoryContent = (rawContent: string): any => {
+  // First, try to find JSON content within markdown code blocks
+  const markdownMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+  
+  if (markdownMatch && markdownMatch[1]) {
+    try {
+      return JSON.parse(markdownMatch[1].trim());
+    } catch (e) {
+      console.error('Failed to parse markdown JSON content:', e);
+    }
+  }
+  
+  // Next, try to find the JSON object in the text
+  try {
+    // Find the start of a JSON object
+    const firstBrace = rawContent.indexOf('{');
+    if (firstBrace !== -1) {
+      // Track opening and closing braces to find the complete JSON object
+      let braceCount = 0;
+      let lastMatchingBrace = -1;
+      
+      for (let i = firstBrace; i < rawContent.length; i++) {
+        if (rawContent[i] === '{') braceCount++;
+        else if (rawContent[i] === '}') {
+          braceCount--;
+          if (braceCount === 0) {
+            lastMatchingBrace = i;
+            break;
+          }
+        }
+      }
+      
+      if (lastMatchingBrace !== -1) {
+        const jsonContent = rawContent.substring(firstBrace, lastMatchingBrace + 1);
+        return JSON.parse(jsonContent);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to extract JSON object:', e);
+  }
+  
+  // If we can't parse the JSON, try to extract basic story information
+  try {
+    // Look for potential title in the content
+    const titleMatch = rawContent.match(/["']title["']\s*:\s*["']([^"']+)["']/);
+    const title = titleMatch ? titleMatch[1] : 'Story from AI';
+    
+    // Look for potential logline
+    const loglineMatch = rawContent.match(/["']logline["']\s*:\s*["']([^"']+)["']/);
+    const logline = loglineMatch ? loglineMatch[1] : '';
+    
+    // Try to identify scenes
+    const sceneMatches = rawContent.match(/["']sceneNumber["']\s*:\s*(\d+)[^}]*["']visualDescription["']\s*:\s*["']([^"']+)["'][^}]*["']dialogueOrNarration["']\s*:\s*["']([^"']+)["']/g);
+    
+    const scenes = sceneMatches 
+      ? sceneMatches.map((match, index) => {
+          const numMatch = match.match(/["']sceneNumber["']\s*:\s*(\d+)/);
+          const visualMatch = match.match(/["']visualDescription["']\s*:\s*["']([^"']+)["']/);
+          const dialogueMatch = match.match(/["']dialogueOrNarration["']\s*:\s*["']([^"']+)["']/);
+          
+          return {
+            id: numMatch ? numMatch[1] : String(index + 1),
+            visualDescription: visualMatch ? visualMatch[1] : '',
+            dialogueOrNarration: dialogueMatch ? dialogueMatch[1] : ''
+          };
+        }) 
+      : [];
+    
+    return {
+      title,
+      logline,
+      scenes: scenes.length > 0 ? scenes : null
+    };
+  } catch (e) {
+    console.error('Failed to extract basic story information:', e);
+    return null;
+  }
+};
+
+// Helper function to create default scenes from story content
+const createDefaultScenes = (storyContent: string): Scene[] => {
+  // Split the content into paragraphs
+  const paragraphs = storyContent.split(/\n\n+/).filter(p => p.trim().length > 0);
+  
+  // If we have very few paragraphs, try to split by sentences
+  let segments = paragraphs;
+  if (paragraphs.length < 3) {
+    const sentences = storyContent.match(/[^.!?]+[.!?]+/g) || [];
+    segments = sentences.filter(s => s.trim().length > 0);
+  }
+  
+  // Limit to a reasonable number of scenes (5-12)
+  const sceneCount = Math.min(Math.max(segments.length, 5), 12);
+  
+  // Group segments if necessary to fit into the scene count
+  const segmentsPerScene = Math.max(1, Math.ceil(segments.length / sceneCount));
+  
+  const scenes: Scene[] = [];
+  
+  for (let i = 0; i < sceneCount; i++) {
+    const startIdx = i * segmentsPerScene;
+    const endIdx = Math.min(startIdx + segmentsPerScene, segments.length);
+    
+    if (startIdx < segments.length) {
+      const sceneText = segments.slice(startIdx, endIdx).join(' ');
+      
+      scenes.push({
+        id: String(i + 1),
+        text: sceneText,
+        image: `https://source.unsplash.com/random/500x400?story=${i + 1}`,
+        visualDescription: `Visual representation of: ${sceneText.substring(0, 100)}${sceneText.length > 100 ? '...' : ''}`
+      });
+    }
+  }
+  
+  return scenes;
 };
 
 export default StoryReview;
