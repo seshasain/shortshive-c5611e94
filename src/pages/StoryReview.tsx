@@ -21,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from '@/lib/auth';
+import { v4 as uuidv4 } from 'uuid';
 
 const mockScenes = [
  
@@ -223,12 +224,101 @@ const StoryReview = () => {
     navigate('/build-story');
   };
   
+  // Add a health check function to verify server connectivity
+  const checkServerHealth = async (apiUrl: string) => {
+    try {
+      console.log('Testing server connectivity with health check...');
+      const response = await fetch(`${apiUrl}/api/health`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Server health check successful:', data);
+        return true;
+      } else {
+        console.error('Server health check failed with status:', response.status);
+        return false;
+      }
+    } catch (error) {
+      console.error('Server health check failed with error:', error);
+      return false;
+    }
+  };
+
   const handleGenerate = async () => {
     setIsLoading(true);
     try {
+      // Generate a story ID if one doesn't exist
+      const generatedStoryId = storyId || uuidv4();
+      
+      // Always ensure the story exists in the stories table first
+      if (!storyId) {
+        console.log('No existing story ID found, generated a new one:', generatedStoryId);
+        // Update the state with the new ID
+        setStoryId(generatedStoryId);
+      }
+      
+      // Get the current user
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+      
+      // Create or verify the story exists in the stories table BEFORE saving to saved_stories
+      console.log('Ensuring story record exists in stories table');
+      const { data: existingStory, error: checkStoryError } = await supabase
+        .from('stories')
+        .select('id, user_id')
+        .eq('id', generatedStoryId)
+        .maybeSingle();
+        
+      if (checkStoryError) {
+        console.error('Error checking story record:', checkStoryError);
+        throw checkStoryError;
+      }
+      
+      if (!existingStory) {
+        // Create a new story in the stories table
+        console.log('Creating new story record in stories table');
+        const { error: storyError } = await supabase
+          .from('stories')
+          .insert({
+            id: generatedStoryId, // Use the generated UUID as the story ID
+            title: storyTitle || 'Untitled Story',
+            description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
+            user_id: user.id
+          });
+        
+        if (storyError) {
+          console.error('Error creating story record:', storyError);
+          throw storyError;
+        }
+        
+        console.log('Successfully created story record with ID:', generatedStoryId);
+      } else {
+        console.log('Story record already exists with ID:', generatedStoryId);
+        // Verify ownership
+        if (existingStory.user_id !== user.id) {
+          console.error('Story exists but belongs to another user');
+          throw new Error('You do not have permission to modify this story');
+        }
+      }
+      
+      // Update the URL without causing a page reload if we just created a new story
+      if (!storyId) {
+        const newUrl = `/review-story/${generatedStoryId}`;
+        window.history.replaceState({ id: generatedStoryId }, '', newUrl);
+        console.log('Updated URL to:', newUrl);
+      }
+      
       // Prepare the animation data
       const animationData = {
-        story_id: storyId,
+        story_id: generatedStoryId, // Use the generated or existing ID
         storyContent: storyText,
         scenes: scenes.map(scene => ({
           sceneNumber: parseInt(scene.id),
@@ -245,12 +335,19 @@ const StoryReview = () => {
         timestamp: new Date().toISOString()
       };
 
-      // Save the current state before generating
-      if (storyId) {
+      console.log('Animation data prepared:', { 
+        story_id: animationData.story_id,
+        scenesCount: animationData.scenes.length,
+        visualSettings: animationData.visualSettings
+      });
+
+      // Save the current state before generating - use the generatedStoryId
+      console.log('Saving current state before generation for story ID:', generatedStoryId);
+      try {
         const { error: saveError } = await saveStory(
-          storyId,
+          generatedStoryId,
           {
-            title: storyTitle,
+            title: storyTitle || 'Untitled Story',
             logline: storyText,
             scenes: animationData.scenes,
             settings: {
@@ -261,6 +358,7 @@ const StoryReview = () => {
         );
 
         if (saveError) {
+          console.error('Error saving story before generation:', saveError);
           toast({
             title: 'Error saving story',
             description: 'Could not save story state. Please try again.',
@@ -268,39 +366,89 @@ const StoryReview = () => {
           });
           return;
         }
+        console.log('Story state saved successfully before generation');
+      } catch (saveError) {
+        console.error('Exception during story save:', saveError);
+        toast({
+          title: 'Error saving story',
+          description: 'An unexpected error occurred while saving. Please try again.',
+          variant: 'destructive',
+        });
+        return;
       }
 
-      // Send the request to the server API
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-      const response = await fetch(`${API_URL}/api/generate-animation`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(animationData),
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok || !responseData.success) {
-        throw new Error(responseData.error || 'Failed to generate animation');
-      }
-
-      // If successful, navigate to generating page with the story ID and response data
+      // CHANGE: Immediately navigate to the animation progress page
+      // This creates a better user experience - show the loading UI right away
       navigate('/generating', { 
         state: { 
-          storyId: responseData.storyId || storyId,
-          images: responseData.images,
-          title: storyTitle,
-          generationStarted: new Date().toISOString()
+          storyId: generatedStoryId,
+          title: storyTitle || 'Untitled Story',
+          generationStarted: new Date().toISOString(),
+          // Initial empty state
+          images: [],
+          status: 'processing',
+          progress: 0
         } 
       });
       
       toast({
-        title: 'Generation started',
-        description: 'Your animation is being generated. You will be notified when it is ready.',
+        title: 'Animation generation started',
+        description: 'Your animation is being created. You can safely close this window and check back later.',
         variant: 'default',
       });
+
+      // Send the request to the server API after navigation
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      console.log('Sending animation generation request to:', API_URL);
+      console.log('Environment variables:', { 
+        VITE_API_URL: import.meta.env.VITE_API_URL,
+        fallbackURL: 'http://localhost:3000',
+        finalURL: `${API_URL}/api/generate-animation`
+      });
+      
+      // Check if server is reachable before proceeding
+      const isServerHealthy = await checkServerHealth(API_URL);
+      if (!isServerHealthy) {
+        throw new Error('Server appears to be offline or unreachable. Please check your connection and try again.');
+      }
+      
+      try {
+        console.log('Starting fetch request to generate animation');
+        const response = await fetch(`${API_URL}/api/generate-animation`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(animationData),
+        });
+        
+        console.log('Fetch request completed with status:', response.status);
+        
+        let responseData;
+        try {
+          responseData = await response.json();
+          console.log('Response data parsed successfully:', responseData);
+        } catch (jsonError) {
+          console.error('Error parsing JSON response:', jsonError);
+          throw new Error('Failed to parse server response');
+        }
+
+        if (!response.ok || !responseData.success) {
+          console.error('Server returned error:', responseData);
+          throw new Error(responseData.error || 'Failed to generate animation');
+        }
+
+        console.log('Animation generation request successful');
+      } catch (fetchError) {
+        console.error('Fetch operation failed:', fetchError);
+        console.error('Fetch error details:', {
+          name: fetchError.name,
+          message: fetchError.message,
+          stack: fetchError.stack,
+          cause: fetchError.cause
+        });
+        throw fetchError; // Re-throw to be caught by the outer catch block
+      }
     } catch (error) {
       console.error('Error generating animation:', error);
       toast({
@@ -308,6 +456,12 @@ const StoryReview = () => {
         description: error.message || 'Could not generate the animation. Please try again.',
         variant: 'destructive',
       });
+      // Navigate back to story review on error
+      if (storyId) {
+        navigate(`/review-story/${storyId}`);
+      } else {
+        navigate('/review-story');
+      }
     } finally {
       setIsLoading(false);
     }

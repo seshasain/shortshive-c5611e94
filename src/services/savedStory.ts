@@ -17,19 +17,48 @@ export const saveStory = async (
   notes?: string
 ): Promise<{ data: SavedStoryData | null; error: Error | null }> => {
   try {
-    const { data, error } = await supabase
+    // First check if a saved story with this story_id already exists
+    const { data: existingData, error: checkError } = await supabase
       .from('saved_stories')
-      .upsert({
-        story_id: storyId,
-        status: 'DRAFT',
-        generation_state: generationState,
-        notes
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-    return { data, error: null };
+      .select('id')
+      .eq('story_id', storyId)
+      .maybeSingle();
+    
+    if (checkError) throw checkError;
+    
+    let result;
+    
+    if (existingData) {
+      // If it exists, update it
+      console.log('Updating existing saved story for story_id:', storyId);
+      result = await supabase
+        .from('saved_stories')
+        .update({
+          status: 'DRAFT',
+          generation_state: generationState,
+          notes,
+          updated_at: new Date().toISOString()
+        })
+        .eq('story_id', storyId)
+        .select()
+        .single();
+    } else {
+      // If it doesn't exist, insert a new record
+      console.log('Creating new saved story for story_id:', storyId);
+      result = await supabase
+        .from('saved_stories')
+        .insert({
+          story_id: storyId,
+          status: 'DRAFT',
+          generation_state: generationState,
+          notes
+        })
+        .select()
+        .single();
+    }
+    
+    if (result.error) throw result.error;
+    return { data: result.data, error: null };
   } catch (error) {
     console.error('Error saving story:', error);
     return { data: null, error: error as Error };

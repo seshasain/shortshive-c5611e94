@@ -1,22 +1,233 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bodyParser from 'body-parser';
+import morgan from 'morgan';
+
+// Import the image generator module
+import * as imageGenerator from './imageGenerator.js';
+import storyRefiner from './storyRefiner.js';
 
 dotenv.config();
+
+// Setup directory paths
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const outputDir = path.join(__dirname, 'output');
+
+// Create output directory if it doesn't exist
+if (!fs.existsSync(outputDir)) {
+  fs.mkdirSync(outputDir, { recursive: true });
+  console.log(`Created output directory: ${outputDir}`);
+}
 
 const app = express();
 const port = process.env.PORT || 3000;
 
+// In-memory store for currently processing animations
+const currentlyProcessingStories = {};
+
+// Middleware
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json({ limit: '10mb' }));
+app.use(morgan('dev'));
+
+// Serve static files from the output directory
+app.use('/generated-images', express.static(outputDir));
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
-
 
 // Add request logging middleware
 app.use((req, res, next) => {
     console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
     next();
+});
+
+// Simple health check endpoint
+app.get('/api/health', (req, res) => {
+    console.log('Health check accessed at:', new Date().toISOString());
+    return res.status(200).json({
+        status: 'running',
+        message: 'Server is up and running',
+        timestamp: new Date().toISOString()
+    });
+});
+
+// Animation generation endpoint
+app.post('/api/generate-animation', async (req, res) => {
+    console.log('Animation generation requested');
+    console.log('Request body structure:', JSON.stringify({
+        story_id: req.body.story_id,
+        scenes_count: req.body.scenes?.length,
+        visualSettings: Object.keys(req.body.visualSettings || {})
+    }));
+    
+    // Validate request body
+    const { story_id, scenes, visualSettings } = req.body;
+    
+    if (!story_id || !scenes || !Array.isArray(scenes) || scenes.length === 0) {
+        console.error('Invalid request body:', req.body);
+        return res.status(400).json({
+            success: false,
+            error: 'Invalid request: story_id and scenes array are required'
+        });
+    }
+    
+    try {
+        console.log(`Generating animation for story ${story_id} with ${scenes.length} scenes`);
+        console.log('Visual settings:', JSON.stringify(visualSettings, null, 2));
+        
+        // Track this story in our processing list
+        currentlyProcessingStories[story_id] = {
+            startTime: new Date(),
+            totalScenes: scenes.length,
+            completedScenes: 0,
+            status: 'processing'
+        };
+        
+        // Call the image generator function
+        const result = await imageGenerator.generateStoryImages(story_id, scenes, visualSettings);
+        
+        // Update the story status
+        if (result.success) {
+            currentlyProcessingStories[story_id].status = 'complete';
+            currentlyProcessingStories[story_id].completedScenes = result.images.length;
+        } else {
+            currentlyProcessingStories[story_id].status = 'error';
+            currentlyProcessingStories[story_id].error = result.error;
+        }
+        
+        if (!result.success) {
+            console.error('Animation generation failed:', result.error);
+            return res.status(500).json({
+                success: false,
+                error: result.error || 'Failed to generate animation'
+            });
+        }
+        
+        console.log(`Successfully generated ${result.images.length} images for story ${story_id}`);
+        
+        // Return the generated images and any failed scenes
+        return res.status(200).json({
+            success: true,
+            images: result.images,
+            failedScenes: result.failedScenes
+        });
+    } catch (error) {
+        console.error('Error generating animation:', error);
+        
+        // Update the story status on error
+        if (currentlyProcessingStories[story_id]) {
+            currentlyProcessingStories[story_id].status = 'error';
+            currentlyProcessingStories[story_id].error = error.message;
+        }
+        
+        return res.status(500).json({
+            success: false,
+            error: error.message || 'Internal server error'
+        });
+    }
+});
+
+// Animation status check endpoint
+app.get('/api/animation-status/:storyId', async (req, res) => {
+  const { storyId } = req.params;
+  
+  if (!storyId) {
+    return res.status(400).json({
+      success: false,
+      error: 'Story ID is required'
+    });
+  }
+  
+  try {
+    console.log(`Checking animation status for story ${storyId}`);
+    
+    // Check if the generated images directory exists
+    if (!fs.existsSync(outputDir)) {
+      console.log(`Output directory ${outputDir} does not exist`);
+      return res.status(200).json({
+        success: true,
+        status: 'processing',
+        progress: 0,
+        message: 'Animation generation has not started yet'
+      });
+    }
+    
+    // Get all files for this storyId
+    const files = fs.readdirSync(outputDir)
+      .filter(file => file.startsWith(`${storyId}_scene_`))
+      .map(file => {
+        // Extract scene number from filename (storyId_scene_X_timestamp.ext)
+        const match = file.match(new RegExp(`${storyId}_scene_(\\d+)_\\d+\\.\\w+`));
+        if (match && match[1]) {
+          return {
+            filename: file,
+            sceneNumber: parseInt(match[1], 10),
+            url: `/generated-images/${file}`,
+            imageUrl: `/generated-images/${file}`
+          };
+        }
+        return null;
+      })
+      .filter(item => item !== null)
+      .sort((a, b) => a.sceneNumber - b.sceneNumber);
+    
+    if (files.length === 0) {
+      return res.status(200).json({
+        success: true,
+        status: 'processing',
+        progress: 10, // Arbitrary progress value
+        message: 'Animation generation is in progress'
+      });
+    }
+    
+    // Look up story info from database or in-memory storage to get expected scene count
+    // For now, we'll use a basic calculation
+    // Calculate the percentage completion based on the highest scene number
+    const highestSceneNumber = files.reduce((max, file) => Math.max(max, file.sceneNumber), 0);
+    
+    // We'll need to know the total expected scenes to calculate accurate progress
+    // For now, we'll estimate based on the highest scene number we've seen
+    // In a real implementation, you'd look this up from your database
+    let estimatedTotalScenes = highestSceneNumber;
+    
+    // If we have info about this story in memory/DB, use that instead
+    // This is a simplistic approach - in production, you'd query a database
+    if (currentlyProcessingStories && currentlyProcessingStories[storyId]) {
+      estimatedTotalScenes = currentlyProcessingStories[storyId].totalScenes;
+    } else {
+      // Default to at least 5 scenes if we have no other information
+      estimatedTotalScenes = Math.max(5, highestSceneNumber);
+    }
+    
+    // Calculate progress as percentage of scenes completed
+    const completedScenes = files.length;
+    const progress = Math.min(90, Math.round((completedScenes / estimatedTotalScenes) * 100));
+    
+    // If we've completed all scenes, mark as complete
+    const isComplete = completedScenes >= estimatedTotalScenes;
+    
+    // Return the found images
+    return res.status(200).json({
+      success: true,
+      status: isComplete ? 'complete' : 'processing',
+      progress: isComplete ? 100 : progress,
+      images: files,
+      message: isComplete 
+        ? `Found ${files.length} generated images` 
+        : `Generation in progress: ${files.length} of ${estimatedTotalScenes} scenes generated`
+    });
+  } catch (error) {
+    console.error('Error checking animation status:', error);
+    return res.status(500).json({
+      success: false,
+      error: error.message || 'Internal server error'
+    });
+  }
 });
 
 // Story Refinement endpoint
@@ -96,7 +307,6 @@ Each activity should be a new scene, dont try to fit two activities in one scene
 Return ONLY the JSON without any additional text or explanation.`;
 
         console.log('Sending message to OpenRouter...');
-        console.log("prompt", prompt);
         const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
             method: 'POST',
             headers: {
@@ -170,11 +380,28 @@ Return ONLY the JSON without any additional text or explanation.`;
 });
 
 app.listen(port)
-    .on('listening', () => console.log(`Server is running on port ${port}`))
+    .on('listening', () => {
+        console.log(`Server is running on port ${port}`);
+        console.log(`Health check endpoint: http://localhost:${port}/api/health`);
+        console.log(`Animation generation endpoint: http://localhost:${port}/api/generate-animation`);
+    })
     .on('error', error => {
         if (error.code === 'EADDRINUSE') {
-            console.error(`Port ${port} is already in use`);
+            const newPort = port + 1;
+            console.error(`Port ${port} is already in use, trying port ${newPort}...`);
+            
+            app.listen(newPort)
+                .on('listening', () => {
+                    console.log(`Server is running on alternate port ${newPort}`);
+                    console.log(`Health check endpoint: http://localhost:${newPort}/api/health`);
+                    console.log(`Animation generation endpoint: http://localhost:${newPort}/api/generate-animation`);
+                })
+                .on('error', alternateError => {
+                    console.error('Server failed to start on alternate port:', alternateError);
+                    process.exit(1);
+                });
+        } else {
+            console.error('Server error:', error);
             process.exit(1);
         }
-        console.error('Server error:', error);
     }); 
