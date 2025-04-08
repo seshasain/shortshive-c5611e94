@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import bodyParser from 'body-parser';
 import morgan from 'morgan';
+import AWS from 'aws-sdk';
 
 // Import the image generator module
 import * as imageGenerator from './imageGenerator.js';
@@ -23,6 +24,51 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
   console.log(`Created output directory: ${outputDir}`);
 }
+
+// Configure Backblaze B2 (using AWS S3 compatible API)
+const b2 = new AWS.S3({
+  endpoint: 'https://s3.us-east-005.backblazeb2.com',
+  accessKeyId: process.env.B2_ACCESS_KEY_ID,
+  secretAccessKey: process.env.B2_SECRET_ACCESS_KEY,
+  s3ForcePathStyle: true,
+  signatureVersion: 'v4',
+  region: 'us-east-005'
+});
+
+// Define B2 bucket name from environment variable
+const B2_BUCKET_NAME = process.env.B2_BUCKET_NAME || 'shortshive';
+
+// Validate B2 configuration
+if (!B2_BUCKET_NAME) {
+  console.error('B2_BUCKET_NAME environment variable is not set');
+  process.exit(1);
+}
+
+if (!process.env.B2_ACCESS_KEY_ID || !process.env.B2_SECRET_ACCESS_KEY) {
+  console.error('B2 credentials are not properly configured');
+  process.exit(1);
+}
+
+// Test B2 connection with better error handling
+b2.listObjectsV2({ Bucket: B2_BUCKET_NAME, MaxKeys: 1 }).promise()
+  .then(() => {
+    console.log('Successfully connected to B2');
+    console.log('B2 configuration loaded:', {
+      bucket: B2_BUCKET_NAME,
+      endpoint: 'https://s3.us-east-005.backblazeb2.com',
+      region: 'us-east-005'
+    });
+  })
+  .catch(error => {
+    console.error('Failed to connect to B2:', error);
+    console.error('Please verify your B2 configuration:');
+    console.error('1. Check if the bucket name is correct');
+    console.error('2. Verify the application key has the necessary permissions');
+    console.error('3. Ensure the endpoint URL is correct for your region');
+    console.error('4. Make sure the bucket exists and is accessible');
+    // Don't exit to allow local fallback
+    console.warn('Will continue with local file storage as fallback');
+  });
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -130,9 +176,86 @@ app.post('/api/generate-animation', async (req, res) => {
         if (result.success) {
             currentlyProcessingStories[story_id].status = 'complete';
             currentlyProcessingStories[story_id].completedScenes = result.images.length;
+            
+            // If all scenes were successfully generated, upload to B2
+            if (result.images.length === storyData.scenes.length) {
+                try {
+                    console.log(`All ${result.images.length} scenes were successfully generated, uploading to B2...`);
+                    
+                    // Array to store B2 URLs
+                    const b2Images = [];
+                    
+                    // Upload each image to B2
+                    for (const image of result.images) {
+                        // Extract filename from imageUrl
+                        const filename = image.imageUrl.split('/').pop();
+                        const localFilePath = path.join(outputDir, filename);
+                        
+                        if (fs.existsSync(localFilePath)) {
+                            const fileContent = fs.readFileSync(localFilePath);
+                            const b2Key = `${story_id}/${filename}`;
+                            
+                            // Upload to B2
+                            await b2.putObject({
+                                Bucket: B2_BUCKET_NAME,
+                                Key: b2Key,
+                                Body: fileContent,
+                                ContentType: 'image/jpeg'
+                            }).promise();
+                            
+                            // Create the B2 URL
+                            const b2Url = `https://s3.us-east-005.backblazeb2.com/${B2_BUCKET_NAME}/${b2Key}`;
+                            
+                            // Add B2 URL to the image object
+                            b2Images.push({
+                                ...image,
+                                b2Url,
+                                imageUrl: b2Url  // Update imageUrl to point to B2
+                            });
+                            
+                            // Remove local file after successful upload
+                            fs.unlinkSync(localFilePath);
+                            console.log(`Uploaded and removed local file: ${filename}`);
+                        } else {
+                            console.warn(`Local file not found: ${localFilePath}`);
+                        }
+                    }
+                    
+                    console.log(`Successfully uploaded all ${b2Images.length} images to B2 and cleaned up local files`);
+                    
+                    // Return the B2 images instead of local images
+                    return res.status(200).json({
+                        success: true,
+                        images: b2Images,
+                        failedScenes: result.failedScenes,
+                        storageType: 'b2'
+                    });
+                } catch (uploadError) {
+                    console.error('Error uploading images to B2:', uploadError);
+                    // Fall back to using local images if B2 upload fails
+                    console.log('Falling back to local image storage due to B2 upload failure');
+                    return res.status(200).json({
+                        success: true,
+                        images: result.images,
+                        failedScenes: result.failedScenes,
+                        storageType: 'local'
+                    });
+                }
+            } else if (result.images.length > 0) {
+                console.log(`Only ${result.images.length} of ${storyData.scenes.length} scenes were generated, keeping files locally`);
+                return res.status(200).json({
+                    success: true,
+                    images: result.images,
+                    failedScenes: result.failedScenes,
+                    storageType: 'local'
+                });
+            }
         } else {
             currentlyProcessingStories[story_id].status = 'error';
             currentlyProcessingStories[story_id].error = result.error;
+            
+            // Clean up any partially generated files
+            cleanupPartialFiles(story_id);
         }
         
         if (!result.success) {
@@ -149,7 +272,8 @@ app.post('/api/generate-animation', async (req, res) => {
         return res.status(200).json({
             success: true,
             images: result.images,
-            failedScenes: result.failedScenes
+            failedScenes: result.failedScenes,
+            storageType: 'local'
         });
     } catch (error) {
         console.error('Error generating animation:', error);
@@ -160,12 +284,48 @@ app.post('/api/generate-animation', async (req, res) => {
             currentlyProcessingStories[story_id].error = error.message;
         }
         
+        // Clean up any partially generated files
+        cleanupPartialFiles(story_id);
+        
         return res.status(500).json({
             success: false,
             error: error.message || 'Internal server error'
         });
     }
 });
+
+// Helper function to clean up partial files when animation generation fails
+function cleanupPartialFiles(storyId) {
+    try {
+        console.log(`Cleaning up partial files for story ${storyId}`);
+        
+        // Check if the output directory exists
+        if (!fs.existsSync(outputDir)) {
+            console.log('Output directory does not exist, nothing to clean up');
+            return;
+        }
+        
+        // Find all files for this story
+        const storyFiles = fs.readdirSync(outputDir)
+            .filter(file => file.startsWith(`${storyId}_scene_`));
+        
+        if (storyFiles.length === 0) {
+            console.log(`No files found for story ${storyId}`);
+            return;
+        }
+        
+        // Delete each file
+        for (const file of storyFiles) {
+            const filePath = path.join(outputDir, file);
+            fs.unlinkSync(filePath);
+            console.log(`Deleted file: ${file}`);
+        }
+        
+        console.log(`Successfully cleaned up ${storyFiles.length} files for story ${storyId}`);
+    } catch (error) {
+        console.error(`Error cleaning up files for story ${storyId}:`, error);
+    }
+}
 
 // Animation status check endpoint
 app.get('/api/animation-status/:storyId', async (req, res) => {
@@ -179,8 +339,62 @@ app.get('/api/animation-status/:storyId', async (req, res) => {
   }
   
   try {
+    // First check if we have B2 uploaded images
+    try {
+      // List objects in the B2 bucket for this story
+      const b2Response = await b2.listObjectsV2({
+        Bucket: B2_BUCKET_NAME,
+        Prefix: `${storyId}/`
+      }).promise();
+      
+      if (b2Response.Contents && b2Response.Contents.length > 0) {
+        // Extract scene numbers from filenames
+        const b2Files = b2Response.Contents
+          .map(item => {
+            const filename = path.basename(item.Key);
+            const match = filename.match(new RegExp(`${storyId}_scene_(\\d+)_\\d+\\.\\w+`));
+            if (match && match[1]) {
+              return {
+                filename,
+                sceneNumber: parseInt(match[1], 10),
+                url: `https://s3.us-east-005.backblazeb2.com/${B2_BUCKET_NAME}/${item.Key}`,
+                imageUrl: `https://s3.us-east-005.backblazeb2.com/${B2_BUCKET_NAME}/${item.Key}`
+              };
+            }
+            return null;
+          })
+          .filter(item => item !== null)
+          .sort((a, b) => a.sceneNumber - b.sceneNumber);
+        
+        if (b2Files.length > 0) {
+          // We found images in B2
+          let estimatedTotalScenes = b2Files.length;
+          
+          // If we have info about this story in memory, use that instead
+          if (currentlyProcessingStories && currentlyProcessingStories[storyId]) {
+            estimatedTotalScenes = currentlyProcessingStories[storyId].totalScenes;
+          }
+          
+          const isComplete = b2Files.length >= estimatedTotalScenes;
+          
+          return res.status(200).json({
+            success: true,
+            status: isComplete ? 'complete' : 'processing',
+            progress: isComplete ? 100 : Math.min(90, Math.round((b2Files.length / estimatedTotalScenes) * 100)),
+            images: b2Files,
+            storageType: 'b2',
+            message: isComplete
+              ? `Found ${b2Files.length} generated images in B2 storage`
+              : `Generation in progress: ${b2Files.length} of ${estimatedTotalScenes} scenes in B2 storage`
+          });
+        }
+      }
+    } catch (b2Error) {
+      console.error('Error checking B2 storage:', b2Error);
+      // Continue to check local storage if B2 check fails
+    }
     
-    
+    // Fall back to checking local storage
     // Check if the generated images directory exists
     if (!fs.existsSync(outputDir)) {
       console.log(`Output directory ${outputDir} does not exist`);
@@ -252,6 +466,7 @@ app.get('/api/animation-status/:storyId', async (req, res) => {
       status: isComplete ? 'complete' : 'processing',
       progress: isComplete ? 100 : progress,
       images: files,
+      storageType: 'local',
       message: isComplete 
         ? `Found ${files.length} generated images` 
         : `Generation in progress: ${files.length} of ${estimatedTotalScenes} scenes generated`
@@ -374,67 +589,31 @@ Return ONLY the JSON without any additional text or explanation.`;
 
         const result = await response.json();
         const storyText = result.choices[0].message.content;
-        console.log("Raw storyText received:", storyText.substring(0, 200) + "...");
+        console.log("Raw storyText", storyText);
         
         // Extract only the JSON part from the response
         let jsonContent = storyText;
         
-        // Improved JSON extraction logic
-        // First try to find content between ```json and ``` markdown tags
-        const markdownMatch = storyText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+        // Check if the response is wrapped in markdown code blocks (```json ... ```)
+        const jsonRegex = /```(?:json)?\s*(\{[\s\S]*?\})\s*```/;
+        const match = storyText.match(jsonRegex);
         
-        if (markdownMatch && markdownMatch[1]) {
-            // Found content inside markdown code blocks
-            jsonContent = markdownMatch[1].trim();
-            console.log("Extracted JSON from markdown code block");
+        if (match && match[1]) {
+            jsonContent = match[1];
         } else {
-            // If no markdown blocks found, try to find the outermost JSON object
-            try {
-                // Find the first { and the matching last }
-                const firstBrace = storyText.indexOf('{');
-                if (firstBrace !== -1) {
-                    let braceCount = 0;
-                    let lastMatchingBrace = -1;
-                    
-                    // Parse through the content to find matching closing brace
-                    for (let i = firstBrace; i < storyText.length; i++) {
-                        if (storyText[i] === '{') braceCount++;
-                        else if (storyText[i] === '}') {
-                            braceCount--;
-                            if (braceCount === 0) {
-                                lastMatchingBrace = i;
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (lastMatchingBrace !== -1) {
-                        jsonContent = storyText.substring(firstBrace, lastMatchingBrace + 1);
-                        console.log("Extracted JSON using brace matching logic");
-                    }
-                }
-            } catch (extractError) {
-                console.error("Error in JSON extraction logic:", extractError);
-                // Fall back to the entire content if extraction fails
-                jsonContent = storyText;
+            // If no markdown blocks, try to find the first { and last }
+            const firstBrace = storyText.indexOf('{');
+            const lastBrace = storyText.lastIndexOf('}');
+            
+            if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+                jsonContent = storyText.substring(firstBrace, lastBrace + 1);
             }
         }
         
-        console.log("Extracted JSON content length:", jsonContent.length);
+        console.log("Extracted JSON content", jsonContent);
         
         try {
-            // Additional validation to ensure we're parsing JSON
-            if (!jsonContent.trim().startsWith('{')) {
-                throw new Error("Extracted content is not valid JSON (doesn't start with {)");
-            }
-            
             const parsedResponse = JSON.parse(jsonContent);
-            
-            // Validate the parsed response has the expected structure
-            if (!parsedResponse.title || !parsedResponse.scenes) {
-                console.warn("Parsed JSON is missing expected fields:", Object.keys(parsedResponse));
-            }
-            
             res.json({ success: true, data: parsedResponse });
         } catch (jsonError) {
             console.error('JSON parsing error:', jsonError);

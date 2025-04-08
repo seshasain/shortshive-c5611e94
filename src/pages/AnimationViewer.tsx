@@ -12,6 +12,7 @@ import { resumeSavedStory } from '@/services/savedStory';
 interface GeneratedImage {
   sceneNumber: number;
   imageUrl: string;
+  b2Url?: string;
 }
 
 interface StoryData {
@@ -33,6 +34,8 @@ const AnimationViewer = () => {
   const [storyData, setStoryData] = useState<StoryData | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [storageType, setStorageType] = useState<string | null>(null);
+  const [autoplay, setAutoplay] = useState(false);
 
   useEffect(() => {
     if (!storyId) {
@@ -90,6 +93,21 @@ const AnimationViewer = () => {
     fetchStoryData();
   }, [storyId, navigate]);
 
+  // Add autoplay functionality
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    
+    if (autoplay && storyData?.images.length > 1) {
+      interval = setInterval(() => {
+        handleNextImage();
+      }, 3000); // Change image every 3 seconds
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [autoplay, currentImageIndex, storyData?.images.length]);
+
   const handlePrevImage = () => {
     if (storyData?.images.length) {
       setCurrentImageIndex((prev) => 
@@ -104,6 +122,10 @@ const AnimationViewer = () => {
         prev === storyData.images.length - 1 ? 0 : prev + 1
       );
     }
+  };
+
+  const handleToggleAutoplay = () => {
+    setAutoplay(prev => !prev);
   };
 
   const handleEditStory = () => {
@@ -194,6 +216,15 @@ const AnimationViewer = () => {
                       Scene {currentImageIndex + 1} of {storyData.images.length}
                     </div>
                     
+                    {storageType === 'b2' && (
+                      <div className="absolute top-4 left-4 px-3 py-1 bg-pixar-blue/90 text-white rounded-full text-xs flex items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" />
+                        </svg>
+                        Cloud Storage
+                      </div>
+                    )}
+                    
                     <button 
                       onClick={handlePrevImage}
                       className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-black/30 hover:bg-black/60 flex items-center justify-center text-white"
@@ -218,8 +249,24 @@ const AnimationViewer = () => {
               {currentScene && (
                 <Card className="mb-6">
                   <CardContent className="p-6">
-                    <h3 className="font-medium text-lg mb-2">Scene {storyData?.images[currentImageIndex].sceneNumber}</h3>
-                    <p className="text-muted-foreground">{currentScene.text}</p>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h3 className="font-medium text-lg mb-2">Scene {storyData?.images[currentImageIndex].sceneNumber}</h3>
+                        <p className="text-muted-foreground">{currentScene.text}</p>
+                      </div>
+                      
+                      <div className="flex flex-col items-end gap-2">
+                        <Button
+                          variant={autoplay ? "default" : "outline"}
+                          size="sm"
+                          onClick={handleToggleAutoplay}
+                          className="px-3"
+                        >
+                          {autoplay ? "Pause" : "Play"}
+                        </Button>
+                      </div>
+                    </div>
+                    
                     {currentScene.visualDescription && (
                       <div className="mt-3 pt-3 border-t">
                         <h4 className="font-medium text-sm mb-1">Visual Description</h4>

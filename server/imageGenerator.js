@@ -193,7 +193,7 @@ async function generateStoryImages(storyId, storyData, adminRules = {}) {
     }
 
     promptForPython += `ADMIN RULES:\n`;
-    promptForPython += `- Generate EXACTLY one high-quality image for each scene in ultra-high-quality ${visualStyle} style\n`;
+    promptForPython += `- Generate EXACTLY one high-quality ${visualStyle} style image for each scene\n`;
     promptForPython += `- Create ultra-high-quality cinematic ${visualStyle} visuals for every scene\n`;
     promptForPython += `- Ensure you generate meaningful visuals that clearly depict what's happening in the story\n`;
     promptForPython += `- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors\n`;

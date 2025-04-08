@@ -36,16 +36,19 @@ const animationMessages = [
 interface GeneratedImage {
   sceneNumber: number;
   imageUrl: string;
+  b2Url?: string;
 }
 
 interface AnimationState {
   storyId: string;
   title: string;
-  status: 'processing' | 'complete' | 'error';
+  status: 'processing' | 'complete' | 'error' | 'partial';
   progress: number;
   currentStep: number;
   images: GeneratedImage[];
   error?: string;
+  storageType?: 'local' | 'b2';
+  failedScenes?: number[];
 }
 
 const AnimationProgress = () => {
@@ -55,10 +58,13 @@ const AnimationProgress = () => {
   const [animationState, setAnimationState] = useState<AnimationState>({
     storyId: location.state?.storyId || '',
     title: location.state?.title || 'Your Story',
-    status: 'processing',
-    progress: 10,
-    currentStep: 1,
-    images: location.state?.images || []
+    status: location.state?.status || 'processing',
+    progress: location.state?.progress || 10,
+    currentStep: location.state?.currentStep || 1,
+    images: location.state?.images || [],
+    error: location.state?.error || undefined,
+    storageType: location.state?.storageType || 'local',
+    failedScenes: location.state?.failedScenes || []
   });
   
   // For rotating animation messages
@@ -92,9 +98,10 @@ const AnimationProgress = () => {
       setAnimationState(prev => ({
         ...prev,
         images: location.state.images,
-        progress: 100,
-        currentStep: 5,
-        status: 'complete'
+        progress: location.state.progress || 100,
+        currentStep: location.state.currentStep || 5,
+        status: location.state.status || 'complete',
+        storageType: location.state.storageType || 'local'
       }));
       return;
     }
@@ -134,7 +141,8 @@ const AnimationProgress = () => {
             status: data.status,
             progress: data.progress,
             currentStep: mapProgressToStep(data.progress),
-            images: data.images || prev.images
+            images: data.images || prev.images,
+            storageType: data.storageType || prev.storageType
           };
           
           // If complete, stop polling
@@ -162,7 +170,8 @@ const AnimationProgress = () => {
   
   const isComplete = animationState.status === 'complete';
   const hasError = animationState.status === 'error';
-
+  const isPartial = animationState.status === 'partial';
+  
   // Step icons for the animation process
   const StepIcon = ({ step }: { step: number }) => {
     const currentStep = animationState.currentStep;
@@ -197,15 +206,24 @@ const AnimationProgress = () => {
           className="max-w-3xl mx-auto text-center mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-bold mb-2 pixar-text-gradient">
-            {isComplete ? 'Your Animation is Ready!' : hasError ? 'Error Occurred' : 'Creating Your Animation'}
+            {isComplete ? 'Your Animation is Ready!' : 
+             isPartial ? 'Animation Partially Generated' :
+             hasError ? 'Error Occurred' : 'Creating Your Animation'}
           </h1>
           <p className="text-muted-foreground">
             {isComplete 
               ? `"${animationState.title}" has been transformed into a visual story` 
-              : hasError
-                ? 'There was an error generating your animation'
-                : 'Our AI is working to bring your story to life'}
+              : isPartial
+                ? 'Some scenes were generated successfully, but others failed'
+                : hasError
+                  ? 'There was an error generating your animation'
+                  : 'Our AI is working to bring your story to life'}
           </p>
+          {animationState.storageType === 'b2' && (
+            <span className="inline-block mt-2 text-xs px-2 py-1 bg-pixar-blue/10 text-pixar-blue rounded-full">
+              Images stored in cloud
+            </span>
+          )}
         </motion.div>
         
         <div className="max-w-3xl mx-auto">
