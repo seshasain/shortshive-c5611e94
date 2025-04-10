@@ -51,6 +51,7 @@ const App = () => (
             <Route path="/review-story" element={<AuthGuard requireAuth={true}><StoryReview /></AuthGuard>} />
             <Route path="/review-story/:id" element={<AuthGuard requireAuth={true}><StoryReview /></AuthGuard>} />
             <Route path="/generating" element={<AuthGuard requireAuth={true}><AnimationProgress /></AuthGuard>} />
+            <Route path="/generating/:id" element={<AuthGuard requireAuth={true}><AnimationProgress /></AuthGuard>} />
             <Route path="/settings" element={<AuthGuard requireAuth={true}><Settings /></AuthGuard>} />
             <Route path="/story/:id" element={<AuthGuard requireAuth={true}><AnimationViewer /></AuthGuard>} />
             

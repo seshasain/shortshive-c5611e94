@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import DashboardLayout from '@/components/dashboard/DashboardLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -54,9 +54,10 @@ interface AnimationState {
 const AnimationProgress = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: urlStoryId } = useParams();
   const { theme } = useTheme();
   const [animationState, setAnimationState] = useState<AnimationState>({
-    storyId: location.state?.storyId || '',
+    storyId: urlStoryId || location.state?.storyId || '',
     title: location.state?.title || 'Your Story',
     status: location.state?.status || 'processing',
     progress: location.state?.progress || 10,

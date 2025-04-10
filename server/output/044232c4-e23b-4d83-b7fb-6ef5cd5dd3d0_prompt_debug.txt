@@ -1,0 +1,25 @@
+PROMPT RECEIVED BY PYTHON SCRIPT:
+
+STORY: "Test Story"
+
+CHARACTERS: No explicit characters defined in the story. For any characters that appear in the scenes:
+- Maintain consistent appearance across all scenes
+- Keep the same clothing, hairstyle, and physical attributes in every scene
+- Ensure facial features, body proportions, and colors remain identical
+
+SCENES:
+SCENE 1:
+Duration: 10 seconds
+Visual Description: A peaceful garden scene
+Dialogue/Narration: In a serene garden...
+
+ADMIN RULES:
+- Generate EXACTLY one high-quality Pixar-style 3D animation style image for each scene
+- Create ultra-high-quality cinematic Pixar-style 3D animation visuals for every scene
+- Ensure you generate meaningful visuals that clearly depict what's happening in the story
+- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors
+- Focus on the primary action described in each scene's visual description
+- Create images that work together as a cohesive visual narrative
+
+
+---END OF PROMPT---

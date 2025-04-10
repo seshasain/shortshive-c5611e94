@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { supabase } from '@/lib/auth';
 import { v4 as uuidv4 } from 'uuid';
+import { generateAnimation } from '@/services/api';
 
 const mockScenes = [
  
@@ -36,7 +37,14 @@ const colorPalettes = [
 ];
 
 // Type definitions for the incoming data
+interface GeneratedImage {
+  url: string;
+  sceneNumber: number;
+}
+
 interface StoryData {
+  storyId?: string;
+  userId?: string;
   storyType: 'ai-prompt' | 'manual';
   storyContent: string;
   settings: {
@@ -46,7 +54,15 @@ interface StoryData {
     duration: number;
     addHook: boolean;
   };
-  timestamp: string;
+  title?: string;
+  logline?: string;
+  scenes?: {
+    id: string;
+    text: string;
+    visualDescription?: string;
+  }[];
+  images?: GeneratedImage[];
+  timestamp?: string;
 }
 
 // Add Scene interface
@@ -114,20 +130,32 @@ const StoryReview = () => {
     
     // If we already have generated story data in the router state, use that
     if (state?.generatedStory) {
-      setStoryTitle(state.generatedStory.title);
-      setStoryText(state.generatedStory.logline);
-      setScenes(state.generatedStory.scenes.map((scene, index) => ({
-        id: String(index + 1),
-        text: scene.dialogueOrNarration,
-        image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
-        visualDescription: scene.visualDescription
-      })));
+      const { title, description, scenes, settings, id } = state.generatedStory;
+      setStoryTitle(title || '');
+      setStoryText(description || '');
+      
+      if (scenes && Array.isArray(scenes)) {
+        const mappedScenes = scenes.map((scene: any) => ({
+          id: scene.id || String(scene.scene_number),
+          text: scene.dialogue_or_narration || '',
+          visualDescription: scene.visual_description || '',
+          image: `https://source.unsplash.com/random/500x400?story=${scene.scene_number}`
+        }));
+        setScenes(mappedScenes);
+      }
+
+      if (id) {
+        setStoryId(id);
+      }
+      
       setStoryType(state.storyData?.storyType || 'ai-prompt');
       setPromptText(state.storyData?.storyContent || '');
-      if (state.storyData?.settings?.emotion) {
-        const suggestedPalette = emotionToColorMap[state.storyData.settings.emotion] || 'auto';
+      
+      if (settings?.emotion) {
+        const suggestedPalette = emotionToColorMap[settings.emotion] || 'auto';
         setColorPalette(suggestedPalette);
       }
+      
       console.log('Using existing story data from navigation state');
       return;
     }
@@ -144,31 +172,62 @@ const StoryReview = () => {
         setPromptText(storyContent);
         // Make API call to refine the story
         const refineStoryData = async () => {
-          setIsLoading(true);
           try {
-            const response = await refineStory(state.storyData);
-            if (response.success && response.data) {
-              setStoryTitle(response.data.title);
-              setStoryText(response.data.logline);
-              setScenes(response.data.scenes.map((scene, index) => ({
-                id: String(index + 1),
-                text: scene.dialogueOrNarration,
-                image: `https://source.unsplash.com/random/500x400?story=${index + 1}`,
-                visualDescription: scene.visualDescription
-              })));
+            setIsLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+              throw new Error('User not authenticated');
+            }
+
+            const refinedStory = await refineStory(state.storyData, user.id);
+            
+            if (refinedStory.success) {
+              const { title, description, scenes, settings } = refinedStory.data;
+              setStoryTitle(title);
+              setStoryText(description);
               
-              // Update the router state to include the generated story
-              // This will prevent API calls on refresh without using localStorage
-              const newState = {
-                ...state,
-                generatedStory: response.data
-              };
+              // Map the scenes with the correct properties and handle potential undefined values
+              const mappedScenes = scenes.map((scene: any) => ({
+                id: scene.id || String(scene.scene_number),
+                text: scene.dialogue_or_narration || '',
+                visualDescription: scene.visual_description || '',
+                image: `https://source.unsplash.com/random/500x400?story=${scene.scene_number}`
+              }));
               
-              // Replace current state with updated one that includes generated story
-              navigate('', { state: newState, replace: true });
+              setScenes(mappedScenes);
+              setStoryType(storyType);
+              setPromptText(storyContent);
+              
+              // Set color palette based on emotion if available
+              if (settings?.emotion) {
+                const suggestedPalette = emotionToColorMap[settings.emotion] || 'auto';
+                setColorPalette(suggestedPalette);
+                console.log(`Set color palette to ${suggestedPalette} based on emotion: ${settings.emotion}`);
+              }
+              
+              // Set the story ID from the response
+              if (refinedStory.data.id) {
+                setStoryId(refinedStory.data.id);
+              }
+              
+              console.log('Story refinement successful');
+              navigate('', { 
+                state: { 
+                  ...state, 
+                  generatedStory: refinedStory.data 
+                }, 
+                replace: true 
+              });
+            } else {
+              throw new Error('Story refinement failed');
             }
           } catch (error) {
             console.error('Error refining story:', error);
+            toast({
+              title: 'Error',
+              description: 'Failed to refine story. Please try again.',
+              variant: 'destructive',
+            });
           } finally {
             setIsLoading(false);
           }
@@ -179,7 +238,7 @@ const StoryReview = () => {
       }
       
       // Use settings to inform the UI
-      if (settings.emotion) {
+      if (settings?.emotion) {
         const suggestedPalette = emotionToColorMap[settings.emotion] || 'auto';
         setColorPalette(suggestedPalette);
         console.log(`Set color palette to ${suggestedPalette} based on emotion: ${settings.emotion}`);
@@ -187,7 +246,7 @@ const StoryReview = () => {
     } else {
       console.log('No data received from StoryBuilder, using default values');
     }
-  }, [location.state, navigate]);
+  }, [location.state, navigate, toast]);
   
   // Check for saved story on mount
   useEffect(() => {
@@ -236,6 +295,92 @@ const StoryReview = () => {
     checkForSavedStory();
   }, [storyId, toast]);
   
+  // Add new function to fetch story data
+  const fetchStoryData = async (id: string) => {
+    try {
+      setIsLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User not authenticated');
+      }
+
+      // First fetch the saved story record
+      const { data: savedStory, error: savedStoryError } = await supabase
+        .from('saved_stories')
+        .select(`
+          *,
+          story:stories(
+            id,
+            title,
+            description,
+            scenes(
+              id,
+              scene_number,
+              duration_estimate,
+              visual_description,
+              dialogue_or_narration
+            )
+          )
+        `)
+        .eq('story_id', id)
+        .single();
+
+      if (savedStoryError) {
+        throw savedStoryError;
+      }
+
+      if (!savedStory) {
+        throw new Error('Story not found');
+      }
+
+      // Extract story data from the joined query
+      const storyData = savedStory.story;
+      if (storyData) {
+        // Update the UI with the fetched data
+        setStoryTitle(storyData.title || '');
+        setStoryText(storyData.description || '');
+        
+        if (storyData.scenes && Array.isArray(storyData.scenes)) {
+          const mappedScenes = storyData.scenes.map((scene: any, index: number) => ({
+            id: scene.id || String(index + 1),
+            text: scene.dialogue_or_narration || '',
+            visualDescription: scene.visual_description || '',
+            image: `https://source.unsplash.com/random/500x400?story=${scene.scene_number || index + 1}`
+          }));
+          setScenes(mappedScenes);
+        }
+
+        // Set default visual settings
+        setColorPalette('pixar');
+        setAspectRatio('16:9');
+
+        toast({
+          title: 'Story loaded',
+          description: 'Successfully loaded your story.',
+          variant: 'default',
+        });
+      } else {
+        throw new Error('Story data not found');
+      }
+    } catch (error) {
+      console.error('Error fetching story:', error);
+      toast({
+        title: 'Error loading story',
+        description: 'Could not load the story. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Add useEffect to fetch data when component mounts with storyId
+  useEffect(() => {
+    if (storyId && !location.state?.storyData && !location.state?.generatedStory) {
+      fetchStoryData(storyId);
+    }
+  }, [storyId, location.state]);
+  
   const handleBack = () => {
     navigate('/build-story');
   };
@@ -266,244 +411,43 @@ const StoryReview = () => {
   };
 
   const handleGenerate = async () => {
-    setIsLoading(true);
     try {
-      // Generate a story ID if one doesn't exist
-      const generatedStoryId = storyId || uuidv4();
-      
-      // Always ensure the story exists in the stories table first
-      if (!storyId) {
-        console.log('No existing story ID found, generated a new one:', generatedStoryId);
-        // Update the state with the new ID
-        setStoryId(generatedStoryId);
-      }
-      
-      // Get the current user
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        throw new Error('User not authenticated');
-      }
-      
-      // Create or verify the story exists in the stories table BEFORE saving to saved_stories
-      console.log('Ensuring story record exists in stories table');
-      const { data: existingStory, error: checkStoryError } = await supabase
-        .from('stories')
-        .select('id, user_id')
-        .eq('id', generatedStoryId)
-        .maybeSingle();
-        
-      if (checkStoryError) {
-        console.error('Error checking story record:', checkStoryError);
-        throw checkStoryError;
-      }
-      
-      if (!existingStory) {
-        // Create a new story in the stories table
-        console.log('Creating new story record in stories table');
-        const { error: storyError } = await supabase
-          .from('stories')
-          .insert({
-            id: generatedStoryId, // Use the generated UUID as the story ID
-            title: storyTitle || 'Untitled Story',
-            description: storyText.substring(0, 200) + (storyText.length > 200 ? '...' : ''),
-            user_id: user.id
-          });
-        
-        if (storyError) {
-          console.error('Error creating story record:', storyError);
-          throw storyError;
-        }
-        
-        console.log('Successfully created story record with ID:', generatedStoryId);
-      } else {
-        console.log('Story record already exists with ID:', generatedStoryId);
-        // Verify ownership
-        if (existingStory.user_id !== user.id) {
-          console.error('Story exists but belongs to another user');
-          throw new Error('You do not have permission to modify this story');
-        }
-      }
-      
-      // Update the URL without causing a page reload if we just created a new story
-      if (!storyId) {
-        const newUrl = `/review-story/${generatedStoryId}`;
-        window.history.replaceState({ id: generatedStoryId }, '', newUrl);
-        console.log('Updated URL to:', newUrl);
-      }
-      
-      // Format the scenes for the animationData
-      const formattedScenes = scenes.map(scene => ({
-        sceneNumber: parseInt(scene.id),
-        dialogueOrNarration: scene.text,
-        visualDescription: scene.visualDescription || `A scene showing: ${scene.text.substring(0, 100)}...`,
-        durationEstimate: 10 // Default duration in seconds
-      }));
-      
-      // Get the refined story data if available from location state
-      const state = location.state as { storyData?: StoryData; generatedStory?: any } | null;
-      const generatedStory = state?.generatedStory;
-      
-      // Extract characters from generatedStory if available, otherwise create default
-      let characters = [];
-      if (generatedStory && generatedStory.characters && generatedStory.characters.length > 0) {
-        characters = generatedStory.characters;
-        console.log('Using characters from generated story:', characters);
-      } else {
-        // Create a default character
-        characters = [
-          {
-            name: "Main Character",
-            description: "A character from the story. No specific details were provided, but for visual consistency, please maintain the same appearance for this character across all scenes."
-          }
-        ];
-        console.log('Using default character definition since none was provided');
-      }
-      
-      // Prepare the animation data
+      setIsLoading(true);
+
+      // Use the existing story ID if available, otherwise generate a new one
+      const currentStoryId = storyId || uuidv4();
+
+      // Prepare animation data
       const animationData = {
-        story_id: generatedStoryId, // Use the generated or existing ID
         title: storyTitle || 'Untitled Story',
         logline: storyText,
-        characters: characters,
-        scenes: formattedScenes,
-        settings: {
-          emotion: generatedStory?.settings?.emotion || "Neutral",
-          language: generatedStory?.settings?.language || "English",
-          voiceStyle: generatedStory?.settings?.voiceStyle || "Conversational",
-          duration: formattedScenes.length * 10, // Rough estimate based on scenes
-          addHook: true
-        },
+        scenes: scenes,
         visualSettings: {
-          colorPalette,
-          aspectRatio,
-          title: storyTitle || 'Untitled Story' // Add title to visualSettings for backward compatibility
+          colorPalette: colorPalette,
+          aspectRatio: aspectRatio,
+          characters: []
         },
-        originalStoryType: storyType,
-        originalPrompt: storyType === 'ai-prompt' ? promptText : null,
-        timestamp: new Date().toISOString()
+        settings: {
+          emotion: "Neutral",
+          language: 'English',
+          voiceStyle: 'Friendly',
+          duration: 0,
+          addHook: true
+        }
       };
 
-      console.log('Animation data prepared:', { 
-        story_id: animationData.story_id,
-        title: animationData.title,
-        characters_count: animationData.characters?.length || 0,
-        scenesCount: animationData.scenes.length,
-        visualSettings: animationData.visualSettings
-      });
+      // Call the API to start generation
+      await generateAnimation(currentStoryId, animationData);
 
-      // Save the current state before generating - use the generatedStoryId
-      console.log('Saving current state before generation for story ID:', generatedStoryId);
-      try {
-        const { error: saveError } = await saveStory(
-          generatedStoryId,
-          {
-            title: storyTitle || 'Untitled Story',
-            logline: storyText,
-            scenes: formattedScenes,
-            characters: characters,
-            settings: {
-              emotion: generatedStory?.settings?.emotion || "Neutral",
-              language: generatedStory?.settings?.language || "English",
-              voiceStyle: generatedStory?.settings?.voiceStyle || "Conversational",
-              duration: formattedScenes.length * 10,
-              addHook: true
-            }
-          }
-        );
-
-        if (saveError) {
-          console.error('Error saving story before generation:', saveError);
-          toast({
-            title: 'Error saving story',
-            description: 'Could not save story state. Please try again.',
-            variant: 'destructive',
-          });
-          return;
+      // Navigate to generating page with the story data
+      navigate(`/generating/${currentStoryId}`, {
+        state: {
+          storyId: currentStoryId,
+          storyData: animationData,
+          scenes: scenes,
+          title: storyTitle || 'Untitled Story'
         }
-        console.log('Story state saved successfully before generation');
-      } catch (saveError) {
-        console.error('Exception during story save:', saveError);
-        toast({
-          title: 'Error saving story',
-          description: 'An unexpected error occurred while saving. Please try again.',
-          variant: 'destructive',
-        });
-        return;
-      }
-
-      // CHANGE: Immediately navigate to the animation progress page
-      // This creates a better user experience - show the loading UI right away
-      navigate('/generating', { 
-        state: { 
-          storyId: generatedStoryId,
-          title: storyTitle || 'Untitled Story',
-          generationStarted: new Date().toISOString(),
-          // Initial empty state
-          images: [],
-          status: 'processing',
-          progress: 0
-        } 
       });
-      
-      toast({
-        title: 'Animation generation started',
-        description: 'Your animation is being created. You can safely close this window and check back later.',
-        variant: 'default',
-      });
-
-      // Send the request to the server API after navigation
-      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
-      console.log('Sending animation generation request to:', API_URL);
-      console.log('Environment variables:', { 
-        VITE_API_URL: import.meta.env.VITE_API_URL,
-        fallbackURL: 'http://localhost:3000',
-        finalURL: `${API_URL}/api/generate-animation`
-      });
-      
-      // Check if server is reachable before proceeding
-      const isServerHealthy = await checkServerHealth(API_URL);
-      if (!isServerHealthy) {
-        throw new Error('Server appears to be offline or unreachable. Please check your connection and try again.');
-      }
-      
-      try {
-        console.log('Starting fetch request to generate animation');
-        const response = await fetch(`${API_URL}/api/generate-animation`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(animationData),
-        });
-        
-        console.log('Fetch request completed with status:', response.status);
-        
-        let responseData;
-        try {
-          responseData = await response.json();
-          console.log('Response data parsed successfully:', responseData);
-        } catch (jsonError) {
-          console.error('Error parsing JSON response:', jsonError);
-          throw new Error('Failed to parse server response');
-        }
-
-        if (!response.ok || !responseData.success) {
-          console.error('Server returned error:', responseData);
-          throw new Error(responseData.error || 'Failed to generate animation');
-        }
-
-        console.log('Animation generation request successful');
-      } catch (fetchError) {
-        console.error('Fetch operation failed:', fetchError);
-        console.error('Fetch error details:', {
-          name: fetchError.name,
-          message: fetchError.message,
-          stack: fetchError.stack,
-          cause: fetchError.cause
-        });
-        throw fetchError; // Re-throw to be caught by the outer catch block
-      }
     } catch (error) {
       console.error('Error generating animation:', error);
       toast({
@@ -511,12 +455,6 @@ const StoryReview = () => {
         description: error.message || 'Could not generate the animation. Please try again.',
         variant: 'destructive',
       });
-      // Navigate back to story review on error
-      if (storyId) {
-        navigate(`/review-story/${storyId}`);
-      } else {
-        navigate('/review-story');
-      }
     } finally {
       setIsLoading(false);
     }

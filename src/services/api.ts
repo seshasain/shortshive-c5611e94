@@ -39,34 +39,37 @@ interface StoryResponse {
     scenes: Scene[];
 }
 
-export const refineStory = async (storyData: StoryData): Promise<{ success: boolean; data: StoryResponse }> => {
-    console.log('Attempting to call refineStory API with data:', storyData);
+export async function refineStory(storyData: any, userId: string) {
     try {
-        console.log('Making fetch request to:', `${API_BASE_URL}/refine-story`);
-        const response = await fetch(`${API_BASE_URL}/refine-story`, {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${API_URL}/api/refine-story`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
-            body: JSON.stringify(storyData),
+            body: JSON.stringify({
+                storyContent: storyData.storyContent,
+                settings: storyData.settings,
+                userId
+            }),
         });
 
         if (!response.ok) {
-            throw new Error('Failed to refine story');
+            const errorData = await response.json();
+            throw new Error(errorData.error || 'Failed to refine story');
         }
 
-        const data = await response.json();
-        console.log('Received response from refineStory API:', data);
-        return data;
+        return await response.json();
     } catch (error) {
         console.error('Error refining story:', error);
         throw error;
     }
-};
+}
 
 export const generateAnimation = async (input: string) => {
     try {
-        const response = await fetch(`${API_BASE_URL}/generate-animation`, {
+        const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+        const response = await fetch(`${API_URL}/api/generate-animation`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',

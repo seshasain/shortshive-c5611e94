@@ -1,0 +1,39 @@
+PROMPT RECEIVED BY PYTHON SCRIPT:
+
+STORY: "Untitled Story"
+
+SETTINGS:
+- emotion: Neutral
+- language: English
+- voiceStyle: Friendly
+- duration: 0
+- addHook: true
+
+CHARACTERS: No explicit characters defined in the story. For any characters that appear in the scenes:
+- Maintain consistent appearance across all scenes
+- Keep the same clothing, hairstyle, and physical attributes in every scene
+- Ensure facial features, body proportions, and colors remain identical
+
+SCENES:
+SCENE 1:
+Duration: 10 seconds
+Visual Description: Kevin stands in a brightly lit laboratory filled with bubbling beakers. He beams, holding a large glass vial filled with purple liquid, carefully walking towards a scientist minion gesturing at a complex machine.
+
+SCENE 2:
+Duration: 10 seconds
+Visual Description: Kevin trips over a stray wire, the purple liquid splashing into a nearby blue concoction in a beaker. The mixture immediately starts to fizz and overflow with bright pink bubbles.
+
+SCENE 3:
+Duration: 10 seconds
+Visual Description: Kevin, initially startled, stares in amazement as the pink bubbles fill the lab, some floating through the air. He giggles, reaching out to pop a bubble with his finger, a wide grin on his face.
+
+ADMIN RULES:
+- Generate EXACTLY one high-quality Pixar-style 3D animation style image for each scene
+- Create ultra-high-quality cinematic Pixar-style 3D animation visuals for every scene
+- Ensure you generate meaningful visuals that clearly depict what's happening in the story
+- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors
+- Focus on the primary action described in each scene's visual description
+- Create images that work together as a cohesive visual narrative
+
+
+---END OF PROMPT---

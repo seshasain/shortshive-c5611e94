@@ -1,0 +1,45 @@
+PROMPT RECEIVED BY PYTHON SCRIPT:
+
+STORY: "Banana Grab!"
+
+CHARACTERS: No explicit characters defined in the story. For any characters that appear in the scenes:
+- Maintain consistent appearance across all scenes
+- Keep the same clothing, hairstyle, and physical attributes in every scene
+- Ensure facial features, body proportions, and colors remain identical
+
+SCENES:
+SCENE 1:
+Duration: 10 seconds
+Visual Description: A bright, sunny kitchen. Kevin spots a perfectly ripe banana sitting on top of a high shelf, just out of reach. His eyes widen with desire.
+Dialogue/Narration: (Excited minion gibberish pointing upwards) 'Banana! Mmm, banana!'
+
+SCENE 2:
+Duration: 15 seconds
+Visual Description: Stuart and Bob are recruited. Kevin gestures excitedly towards the banana and then mimes stacking up. Stuart gets the idea and kneels. Bob clambers onto Stuart's shoulders.
+Dialogue/Narration: (Kevin, enthusiastically directing) 'Ooh! Ooh!  Stacky! Stacky!  Banana juuust there!'
+
+SCENE 3:
+Duration: 10 seconds
+Visual Description: Kevin carefully climbs onto Bob's shoulders, forming a wobbly minion tower. The tower sways precariously. Bob giggles nervously, Stuart strains to stay steady.
+Dialogue/Narration: (Stuart, grunting) 'Ugh!  Steady... steady... ' (Bob, nervously) 'Hehehe... wobble wobble!'
+
+SCENE 4:
+Duration: 15 seconds
+Visual Description: Kevin stretches, fingertips just brushing the banana. He reaches further, grunting with effort, and finally, with a triumphant grab, secures the banana!
+Dialogue/Narration: (Kevin, straining) 'Almost... almost... GOT IT!' (Triumphant yell) 'YAY! Banana!'
+
+SCENE 5:
+Duration: 10 seconds
+Visual Description: The minion tower collapses in a happy, giggling heap. Kevin proudly holds up the banana, sharing it with Stuart and Bob. They cheer and peel the banana together, ready to enjoy their prize.
+Dialogue/Narration: (All minions, happily) 'Bello! Banana! Minion banana!  Hooray!'
+
+ADMIN RULES:
+- Generate EXACTLY one high-quality Pixar-style 3D animation style image for each scene
+- Create ultra-high-quality cinematic Pixar-style 3D animation visuals for every scene
+- Ensure you generate meaningful visuals that clearly depict what's happening in the story
+- CRITICAL: Maintain 100% consistent character appearance across all scenes - same face, same clothing, same hairstyle, same colors
+- Focus on the primary action described in each scene's visual description
+- Create images that work together as a cohesive visual narrative
+
+
+---END OF PROMPT---
